@@ -1,5 +1,15 @@
 {
 	"ImportPath": "github.com/crakalakin/webz",
 	"GoVersion": "go1.3.2",
-	"Deps": []
+	"Deps": [
+		{
+			"ImportPath": "github.com/jmoiron/sqlx",
+			"Comment": "sqlx-v1.0-45-gaa6f196",
+			"Rev": "aa6f196bd82f2024e5f0b5d5e6cf3b21414be8b4"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Rev": "fbed41b4c063a307ab21bf37ae6705519fb34ca3"
+		}
+	]
 }
