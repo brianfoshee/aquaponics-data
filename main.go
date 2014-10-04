@@ -8,8 +8,8 @@ import (
 )
 
 type Reading struct {
-	PH          float64 `json:"ph"`
-	TDS         float64 `json:"tds"`
+	PH          string  `json:"ph"`
+	TDS         string  `json:"tds"`
 	Temperature float64 `json:"temperature"`
 	CreatedAt   time.Time
 }
