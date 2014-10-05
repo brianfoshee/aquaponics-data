@@ -1,1 +1,2 @@
-Godeps/_workspace/
+# This seems like it shouldn't be in SCM but the Heroku buildpack requires it.
+# Godeps/_workspace/
