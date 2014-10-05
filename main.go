@@ -35,7 +35,7 @@ func main() {
 	http.HandleFunc("/envdata/getEnvironmentData", envdata)
 	http.HandleFunc("/envdata/RefreshGauges", refresh)
 
-	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
 func envdata(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,8 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	_, err := db.Exec("insert into readings (ph, tds, temperature, created_at) values ($1, $2, $3, $4)", reading.PH, reading.TDS, reading.Temperature, reading.CreatedAt)
+	_, err := db.Exec("insert into readings (ph, tds, temperature, created_at) values ($1, $2, $3, $4)",
+		reading.PH, reading.TDS, reading.Temperature, reading.CreatedAt)
 	if err != nil {
 		panic(err)
 	}
