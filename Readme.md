@@ -12,7 +12,7 @@ CREATE TABLE readings (
 
 The app requires two ENV variables to be set before it'll run:
 ```
-PORT=5000 DATABASE_URL=postgres://user@localhost/database go run main.go
+PORT=5000 DATABASE_URL="postgres://user@localhost/database?sslmode=disable" go run main.go
 ```
 
 If any dependencies are added, use [Godep] [godep] to package them into the repo:
