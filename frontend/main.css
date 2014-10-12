@@ -1,0 +1,15 @@
+* {
+  margin: 0;
+  padding: 0;  
+}
+
+
+.gauge {  
+     width: 400px;
+     height: 400px;        
+}
+
+.chart {  
+     width: 1350px;
+     height: 350px;        
+}
