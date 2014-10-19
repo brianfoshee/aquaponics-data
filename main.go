@@ -13,7 +13,7 @@ import (
 )
 
 type Reading struct {
-	DeviceId	string	  `json:"device_id" db:"device_id"`
+	DeviceId    string    `json:"device_id" db:"device_id"`
 	PH          float64   `json:"ph" db:"ph"`
 	TDS         float64   `json:"tds" db:"tds"`
 	Temperature float64   `json:"temperature" db:"temperature"`
