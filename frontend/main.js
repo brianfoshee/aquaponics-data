@@ -5,7 +5,7 @@ window.onload = function() {
 function refreshPage()
 {
 	gaugeRequest = serverRequest();
-	var URL = "http://localhost:5000/readings/latest";
+	var URL = "http://gowebz.herokuapp.com/readings/latest";
 	gaugeRequest.open("GET", URL, true);
     gaugeRequest.onreadystatechange = function()
     {
