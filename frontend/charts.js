@@ -15,7 +15,7 @@ var tdsChart;
 var tdsChartData;
 var tdsChartOptions;
 
-var URL = 'http://localhost:5000/envdata/getEnvironmentData';
+var URL = 'http://localhost:5000/readings';
 var requestEnvironmentData = serverRequest();
 requestEnvironmentData.open("GET", URL, false);
 
