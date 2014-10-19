@@ -15,7 +15,7 @@ var tdsChart;
 var tdsChartData;
 var tdsChartOptions;
 
-var URL = 'http://gowebz.herokuapp.com/readings';
+var URL = 'http://gowebz.herokuapp.com/devices/fe5d2287d64e448971febd91a4229b616e3a4bf6641916ade12a931a/readings';
 var requestEnvironmentData = serverRequest();
 requestEnvironmentData.open("GET", URL, false);
 
