@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"github.com/gorilla/mux"
 )
 
 type Reading struct {
@@ -21,6 +22,8 @@ type Reading struct {
 var db *sqlx.DB
 
 func main() {
+	r := mux.NewRouter()
+	
 	var err error
 	db, err = sqlx.Open("postgres", os.Getenv("DATABASE_URL"))
 	defer db.Close()
@@ -30,15 +33,15 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Error on opening database connection: %s", err.Error())
 	}
-
-	http.HandleFunc("/", hello)
-	http.HandleFunc("/envdata/getEnvironmentData", envdata)
-	http.HandleFunc("/envdata/RefreshGauges", refresh)
+	
+	r.HandleFunc("/readings", GetReadings).Methods("GET")
+	r.HandleFunc("/readings/latest", GetLatestReading).Methods("GET")
+	r.HandleFunc("/readings", AddReading).Methods("POST")
+	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
-
-func envdata(w http.ResponseWriter, r *http.Request) {
+func GetReadings(w http.ResponseWriter, r *http.Request) {
 	var readings []Reading
 	err := db.Select(&readings, "select * from readings")
 
@@ -52,7 +55,7 @@ func envdata(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func refresh(w http.ResponseWriter, r *http.Request) {
+func GetLatestReading(w http.ResponseWriter, r *http.Request) {
 	reading := Reading{}
 	err := db.Get(&reading, "select * from readings order by created_at desc limit 1")
 
@@ -65,7 +68,8 @@ func refresh(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
-func hello(w http.ResponseWriter, r *http.Request) {
+
+func AddReading(w http.ResponseWriter, r *http.Request) {
 	reading := new(Reading)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&reading); err != nil {
