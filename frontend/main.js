@@ -5,7 +5,7 @@ window.onload = function() {
 function refreshPage()
 {
 	gaugeRequest = serverRequest();
-	var URL = "http://localhost:5000/envdata/RefreshGauges?Random=" + (new Date()).getTime();
+	var URL = "http://localhost:5000/readings/latest";
 	gaugeRequest.open("GET", URL, true);
     gaugeRequest.onreadystatechange = function()
     {
