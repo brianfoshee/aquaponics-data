@@ -4,9 +4,9 @@ window.onload = function() {
 
 function refreshPage() {
 	gaugeRequest = serverRequest();
-	var URL = "http://localhost:5000/readings?number=1";
+	var URL = "http://gowebz.heroku.com/devices/fe5d2287d64e448971febd91a4229b616e3a4bf6641916ade12a931a/readings?number=1";
 	gaugeRequest.open("GET", URL, true);
-    gaugeRequest.onreadystatechange = function() {
+    	gaugeRequest.onreadystatechange = function() {
     	if (gaugeRequest.readyState == 4 && gaugeRequest.status == 200) {
     		JSONData = JSON.parse(gaugeRequest.responseText);
     		var waterTempData = JSONData[0].temperature;
