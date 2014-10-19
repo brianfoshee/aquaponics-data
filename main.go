@@ -13,6 +13,7 @@ import (
 )
 
 type Reading struct {
+	DeviceId	string	  `json:"device_id" db:"device_id"`
 	PH          float64   `json:"ph" db:"ph"`
 	TDS         float64   `json:"tds" db:"tds"`
 	Temperature float64   `json:"temperature" db:"temperature"`
@@ -34,13 +35,16 @@ func main() {
 		log.Fatalf("Error on opening database connection: %s", err.Error())
 	}
 	
-	r.HandleFunc("/readings", GetReadings).Methods("GET")
-	r.HandleFunc("/readings", AddReading).Methods("POST")
+	r.HandleFunc("/devices/{id}/readings", GetReadings).Methods("GET")
+	r.HandleFunc("/devices/{id}/readings", AddReading).Methods("POST")
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 func GetReadings(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	deviceId := vars["id"]
+	
 	params := r.URL.Query()
 	numReadings := params.Get("number")
 	
@@ -49,7 +53,7 @@ func GetReadings(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	var readings []Reading
-	err := db.Select(&readings, "select * from readings order by created_at desc limit "+numReadings)
+	err := db.Select(&readings, "select * from readings where device_id = $1 order by created_at desc limit $2", deviceId, numReadings)
 
 	data, err := json.Marshal(readings)
 	if err != nil {
@@ -72,8 +76,8 @@ func AddReading(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	_, err := db.Exec("insert into readings (ph, tds, temperature, created_at) values ($1, $2, $3, $4)",
-		reading.PH, reading.TDS, reading.Temperature, reading.CreatedAt)
+	_, err := db.Exec("insert into readings (device_id, ph, tds, temperature, created_at) values ($1, $2, $3, $4, $5)",
+		reading.DeviceId, reading.PH, reading.TDS, reading.Temperature, reading.CreatedAt)
 	if err != nil {
 		panic(err)
 	}
