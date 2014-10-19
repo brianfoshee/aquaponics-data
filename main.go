@@ -35,31 +35,23 @@ func main() {
 	}
 	
 	r.HandleFunc("/readings", GetReadings).Methods("GET")
-	r.HandleFunc("/readings/latest", GetLatestReading).Methods("GET")
 	r.HandleFunc("/readings", AddReading).Methods("POST")
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 func GetReadings(w http.ResponseWriter, r *http.Request) {
+	params := r.URL.Query()
+	numReadings := params.Get("number")
+	
+	if numReadings == "" {
+		numReadings="300"
+	}
+	
 	var readings []Reading
-	err := db.Select(&readings, "select * from readings")
+	err := db.Select(&readings, "select * from readings order by created_at desc limit "+numReadings)
 
 	data, err := json.Marshal(readings)
-	if err != nil {
-		panic(err)
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-}
-
-func GetLatestReading(w http.ResponseWriter, r *http.Request) {
-	reading := Reading{}
-	err := db.Get(&reading, "select * from readings order by created_at desc limit 1")
-
-	data, err := json.Marshal(reading)
 	if err != nil {
 		panic(err)
 	}
