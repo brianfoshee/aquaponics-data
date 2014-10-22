@@ -3,13 +3,13 @@ package main
 import (
 	_ "database/sql"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
 	"time"
-	"github.com/gorilla/mux"
 )
 
 type Reading struct {
@@ -24,7 +24,7 @@ var db *sqlx.DB
 
 func main() {
 	r := mux.NewRouter()
-	
+
 	var err error
 	db, err = sqlx.Open("postgres", os.Getenv("DATABASE_URL"))
 	defer db.Close()
@@ -34,7 +34,7 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Error on opening database connection: %s", err.Error())
 	}
-	
+
 	r.HandleFunc("/devices/{id}/readings", GetReadings).Methods("GET")
 	r.HandleFunc("/devices/{id}/readings", AddReading).Methods("POST")
 	http.Handle("/", r)
@@ -44,14 +44,14 @@ func main() {
 func GetReadings(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceId := vars["id"]
-	
+
 	params := r.URL.Query()
 	numReadings := params.Get("number")
-	
+
 	if numReadings == "" {
-		numReadings="300"
+		numReadings = "300"
 	}
-	
+
 	var readings []Reading
 	err := db.Select(&readings, "select * from readings where device_id = $1 order by created_at desc limit $2", deviceId, numReadings)
 
