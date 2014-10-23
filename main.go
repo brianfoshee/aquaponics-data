@@ -3,6 +3,7 @@ package main
 import (
 	_ "database/sql"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -67,6 +68,7 @@ func GetReadings(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddReading(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Reading:", r.Body)
 	reading := new(Reading)
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&reading); err != nil {
