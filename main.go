@@ -41,6 +41,7 @@ func main() {
 
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
+
 func GetReadings(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceId := vars["id"]
@@ -71,7 +72,6 @@ func AddReading(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&reading); err != nil {
 		panic(err)
 	}
-	reading.CreatedAt = time.Now()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
