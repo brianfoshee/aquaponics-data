@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	_ "database/sql"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -13,11 +14,30 @@ import (
 )
 
 type Reading struct {
-	DeviceId    string    `json:"device_id" db:"device_id"`
-	PH          float64   `json:"ph" db:"ph"`
-	TDS         float64   `json:"tds" db:"tds"`
-	Temperature float64   `json:"temperature" db:"temperature"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	DeviceId    string  `json:"device_id" db:"device_id"`
+	PH          float64 `json:"ph" db:"ph"`
+	TDS         float64 `json:"tds" db:"tds"`
+	Temperature float64 `json:"temperature" db:"temperature"`
+	CreatedAt   MyTime  `json:"created_at" db:"created_at"`
+}
+
+const iso8601 = "2006-01-02T15:04:05Z"
+
+type MyTime time.Time
+
+func (mt *MyTime) UnmarshalJSON(data []byte) (err error) {
+	b := bytes.NewBuffer(data)
+	dec := json.NewDecoder(b)
+	var s string
+	if err := dec.Decode(&s); err != nil {
+		return err
+	}
+	t, err := time.Parse(iso8601, s)
+	if err != nil {
+		return err
+	}
+	*mt = (MyTime)(t)
+	return nil
 }
 
 var db *sqlx.DB
