@@ -1,80 +1,57 @@
 package main
 
 import (
-	"bytes"
-	_ "database/sql"
 	"encoding/json"
+	"github.com/crakalakin/aquaponics-data/common"
+	"github.com/crakalakin/aquaponics-data/db"
 	"github.com/gorilla/mux"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
-	"time"
+	"strconv"
 )
 
-type Reading struct {
-	DeviceId    string  `json:"device_id" db:"device_id"`
-	PH          float64 `json:"ph" db:"ph"`
-	TDS         float64 `json:"tds" db:"tds"`
-	Temperature float64 `json:"temperature" db:"temperature"`
-	CreatedAt   MyTime  `json:"created_at" db:"created_at"`
-}
-
-const iso8601 = "2006-01-02T15:04:05Z"
-
-type MyTime time.Time
-
-func (mt *MyTime) UnmarshalJSON(data []byte) (err error) {
-	b := bytes.NewBuffer(data)
-	dec := json.NewDecoder(b)
-	var s string
-	if err := dec.Decode(&s); err != nil {
-		return err
-	}
-	t, err := time.Parse(iso8601, s)
-	if err != nil {
-		return err
-	}
-	*mt = (MyTime)(t)
-	return nil
-}
-
-var db *sqlx.DB
+var (
+	mgr *db.PostgresManager
+)
 
 func main() {
-	r := mux.NewRouter()
-
 	var err error
-	db, err = sqlx.Open("postgres", os.Getenv("DATABASE_URL"))
-	defer db.Close()
+	mgr, err = db.NewPostgresManager(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Unable to create a new PostgresManager %s", err.Error())
+	}
+	defer mgr.Close()
+
+	r := mux.NewRouter()
+	r.HandleFunc("/devices/{id}/readings", getReadings).Methods("GET")
+	r.HandleFunc("/devices/{id}/readings", addReading).Methods("POST")
+	http.Handle("/", r)
+
+	err = http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	if err != nil {
+		log.Fatalf("ListenAndServe error: ", err)
+	}
+}
+
+func getReadings(w http.ResponseWriter, r *http.Request) {
+	//vars := mux.Vars(r)
+	//deviceID := vars["id"]
+
+	params := r.URL.Query()
+	numReadings, err := strconv.Atoi(params.Get("number"))
 	if err != nil {
 		panic(err)
 	}
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Error on opening database connection: %s", err.Error())
+
+	if numReadings > 300 {
+		numReadings = 300
 	}
 
-	r.HandleFunc("/devices/{id}/readings", GetReadings).Methods("GET")
-	r.HandleFunc("/devices/{id}/readings", AddReading).Methods("POST")
-	http.Handle("/", r)
-
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
-}
-
-func GetReadings(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	deviceId := vars["id"]
-
-	params := r.URL.Query()
-	numReadings := params.Get("number")
-
-	if numReadings == "" {
-		numReadings = "300"
+	readings, err := mgr.GetReadings(numReadings)
+	if err != nil {
+		panic(err)
 	}
-
-	var readings []Reading
-	err := db.Select(&readings, "select * from readings where device_id = $1 order by created_at desc limit $2", deviceId, numReadings)
 
 	data, err := json.Marshal(readings)
 	if err != nil {
@@ -86,8 +63,8 @@ func GetReadings(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func AddReading(w http.ResponseWriter, r *http.Request) {
-	reading := new(Reading)
+func addReading(w http.ResponseWriter, r *http.Request) {
+	reading := common.Reading{}
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&reading); err != nil {
 		panic(err)
@@ -96,11 +73,10 @@ func AddReading(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	_, err := db.Exec("insert into readings (device_id, ph, tds, temperature, created_at) values ($1, $2, $3, $4, $5)",
-		reading.DeviceId, reading.PH, reading.TDS, reading.Temperature, reading.CreatedAt)
-	if err != nil {
+	if err := mgr.AddReading(&reading); err != nil {
 		panic(err)
 	}
+
 	data, err := json.Marshal(reading)
 	if err != nil {
 		panic(err)
