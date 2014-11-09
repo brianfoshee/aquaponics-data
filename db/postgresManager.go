@@ -37,6 +37,10 @@ func (m *PostgresManager) AddReading(r *common.Reading) error {
 
 // GetReadings gets n instances of Readings from the database
 func (m *PostgresManager) GetReadings(n int) ([]*common.Reading, error) {
+	if n < 1 {
+		panic("Invalid request - zero or negative number of readings")
+	}
+
 	var readings []*common.Reading
 	rows, err := m.db.Query(
 		"select * from readings where device_id = $1 order by created_at desc limit $2",
@@ -50,7 +54,7 @@ func (m *PostgresManager) GetReadings(n int) ([]*common.Reading, error) {
 
 	for rows.Next() {
 		var reading common.Reading
-		if err := rows.Scan(&reading); err != nil {
+		if err := rows.Scan(&reading.PH, &reading.TDS, &reading.WaterTemperature, &reading.DeviceID, &reading.CreatedAt); err != nil {
 			return nil, err
 		}
 		readings = append(readings, &reading)
