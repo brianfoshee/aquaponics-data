@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"github.com/crakalakin/aquaponics-data/common"
+	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 	"log"
 )
@@ -12,10 +13,11 @@ type PostgresManager struct {
 	db *sql.DB
 }
 
+// NewPostgresManager creates and returns a reference to a postgres database connection
 func NewPostgresManager(uri string) (*PostgresManager, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {
-		log.Printf("Error on opening database connection: ", err)
+		log.Print("Error on opening database connection: ", err)
 		return nil, err
 	}
 	if err := db.Ping(); err != nil {
@@ -66,6 +68,17 @@ func (m *PostgresManager) GetReadings(n int) ([]*common.Reading, error) {
 	return readings, nil
 }
 
+// GetCount returns the number of readings in PostgresManager
+func (m *PostgresManager) GetCount() (int, error) {
+	var countReadings int
+	err := m.db.QueryRow("SELECT COUNT(*) FROM readings").Scan(&countReadings)
+	if err != nil {
+		return 0, err
+	}
+	return countReadings, err
+}
+
+// Close closes the database connection
 func (m *PostgresManager) Close() error {
 	return m.db.Close()
 }

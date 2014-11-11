@@ -8,4 +8,5 @@ import (
 type Manager interface {
 	AddReading(r *common.Reading) error
 	GetReadings(n int) ([]*common.Reading, error)
+	GetCount() (int, error)
 }

@@ -2,11 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"github.com/crakalakin/aquaponics-data/common"
 	"os"
 	"testing"
 	"time"
-	"encoding/json"
 )
 
 func TestPostgresAddReading(t *testing.T) {
@@ -26,7 +26,7 @@ func TestPostgresAddReading(t *testing.T) {
 	case err == sql.ErrNoRows:
 		t.Error("Error no rows")
 	case err != nil:
-		t.Errorf("Error", err)
+		t.Error("Error", err)
 	}
 
 	r := common.Reading{
@@ -37,16 +37,16 @@ func TestPostgresAddReading(t *testing.T) {
 		CreatedAt:        time.Now(),
 	}
 	if err := manager.AddReading(&r); err != nil {
-		t.Errorf("Postgres DB should add a reading\n", err)
+		t.Error("Postgres DB should add a reading\n", err)
 	}
 
 	var al int
 	err = manager.db.QueryRow("SELECT COUNT(*) FROM readings").Scan(&al)
 	switch {
 	case err == sql.ErrNoRows:
-		t.Error("Error no rows")
+		t.Error("Error no rows in table readings")
 	case err != nil:
-		t.Errorf("Error", err)
+		t.Error("Error", err)
 	}
 
 	if al != l+1 {
@@ -76,8 +76,7 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Failed to setup schema")
 	}
 
-
-	numReadings := 2 
+	numReadings := 2
 	readings, err := manager.GetReadings(numReadings)
 	if err != nil {
 		panic(err)
@@ -88,7 +87,7 @@ func TestPostgresGetReadings(t *testing.T) {
 	if len(readings) > numReadings {
 		t.Error("Database returned too many readings")
 	}
-	
+
 	_, err = json.Marshal(readings)
 	if err != nil {
 		t.Error("Unable to marshal data received from database")

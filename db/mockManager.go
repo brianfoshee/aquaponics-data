@@ -35,6 +35,11 @@ func (db *MockManager) GetReadings(n int) ([]*common.Reading, error) {
 	return r, nil
 }
 
+// GetCount returns the number of readings in MockManager
+func (db *MockManager) GetCount() (int, error) {
+	return len(db.readings), nil
+}
+
 // NewMockManager returns a shared instance of MockManager, and fills it with
 // dummy data to be used in tests
 func NewMockManager() *MockManager {
