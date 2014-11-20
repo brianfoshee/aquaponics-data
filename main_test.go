@@ -3,40 +3,81 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"github.com/crakalakin/aquaponics-data/common"
+	"github.com/crakalakin/aquaponics-data/db"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
 
-//~ $ date --iso-8601=seconds
-//2014-10-27T03:33:42+0000
-//~ $ date --rfc-3339=seconds
-//2014-10-27 03:33:48+00:00
+func TestGetReadings(t *testing.T) {
+	db := db.NewMockManager()
+	handler := getReadingsHandler(db)
 
-type Read struct {
-	ReadAt MyTime `json:"read_at"`
+	req, err := http.NewRequest("GET", "/?number=1", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler(w, req)
+	if w.Code != http.StatusOK {
+		t.Error("getReadingsHandler returned error: ", w.Code)
+	}
+
+	var reading []common.Reading
+
+	if err := json.NewDecoder(w.Body).Decode(&reading); err != nil {
+		t.Error("getReadingsHandler response is not JSON: ", w.Body)
+	}
 }
 
-var testCases = []struct {
-	read_at     string
-	expected    MyTime
-	description string
-}{
-	{"2014-10-26T23:19:00Z", (MyTime)(time.Date(2014, 10, 26, 23, 19, 0, 0, time.UTC)), "During DST"},
-	{"2014-02-01T09:10:00Z", (MyTime)(time.Date(2014, 2, 1, 9, 10, 0, 0, time.UTC)), "Out of DST"},
-}
+func TestAddReading(t *testing.T) {
+	mockManager := db.NewMockManager()
+	originalCount, err := mockManager.GetCount()
+	if err != nil {
+		t.Error("Unable to GetCount() from MockManager")
+	}
 
-func TestTimeISO8601Unmarshall(t *testing.T) {
-	for _, test := range testCases {
-		j := fmt.Sprintf("{\"read_at\":\"%s\"}", test.read_at)
-		b := bytes.NewBuffer([]byte(j))
-		reading := new(Read)
-		decoder := json.NewDecoder(b)
-		if err := decoder.Decode(&reading); err != nil {
-			t.Fatalf("Could not decode")
-		}
-		if reading.ReadAt != test.expected {
-			t.Fatalf("Not equal.")
-		}
+	handler := addReadingHandler(mockManager)
+
+	reading := common.Reading{
+		DeviceID:         "343",
+		PH:               6.21,
+		TDS:              121,
+		WaterTemperature: 72.12,
+		CreatedAt:        time.Now(),
+	}
+
+	b, err := json.Marshal(reading)
+	if err != nil {
+		t.Error(err)
+	}
+
+	req, err := http.NewRequest("POST", "/", bytes.NewBuffer(b))
+	if err != nil {
+		t.Error(err)
+	}
+
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Error("addReadingHandler returned http status code: ", w.Code)
+	}
+
+	newCount, err := mockManager.GetCount()
+	if err != nil {
+		t.Error("Unable to GetCount() from MockManager")
+	}
+
+	if newCount != originalCount+1 {
+		t.Errorf(
+			`addReadingHandler did not insert reading into readings.
+			Expected: %d
+			Actual: %d`,
+			originalCount+1,
+			newCount)
 	}
 }

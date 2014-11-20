@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/crakalakin/webz",
+	"ImportPath": "github.com/crakalakin/aquaponics-data",
 	"GoVersion": "go1.3.3",
 	"Deps": [
 		{
@@ -9,11 +9,6 @@
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
-		},
-		{
-			"ImportPath": "github.com/jmoiron/sqlx",
-			"Comment": "sqlx-v1.0-45-gaa6f196",
-			"Rev": "aa6f196bd82f2024e5f0b5d5e6cf3b21414be8b4"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
