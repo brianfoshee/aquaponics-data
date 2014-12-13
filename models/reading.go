@@ -24,6 +24,7 @@ Code:
 }
 */
 
+// SensorData represents the sensor readings from the monitoring device
 type SensorData struct {
 	PH               float64 `json:"ph"`
 	TDS              float64 `json:"tds"`
@@ -32,9 +33,9 @@ type SensorData struct {
 
 // Reading represents a single reading from various sensors
 type Reading struct {
-	CreatedAt time.Time `json:"created_at"`
-	SensorData
-	Device
+	CreatedAt  time.Time  `json:"created_at"`
+	SensorData SensorData `json:"sensor_data"`
+	Device     Device     `json:"device"`
 }
 
 // Readings represents a bunch of readings

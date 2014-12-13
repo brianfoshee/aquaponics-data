@@ -2,18 +2,18 @@ package db
 
 import (
 	"errors"
-	"github.com/crakalakin/aquaponics-data/common"
+	"github.com/crakalakin/aquaponics-data/models"
 	"time"
 )
 
 // MockManager holds a slice of Readings for tests which require mocked
 // data to be present.
 type MockManager struct {
-	readings []*common.Reading
+	readings []*models.Reading
 }
 
 // AddReading adds a single reading to the slice of Readings in MockManager.
-func (db *MockManager) AddReading(r *common.Reading) error {
+func (db *MockManager) AddReading(r *models.Reading) error {
 	db.readings = append(db.readings, r)
 	if db.readings == nil {
 		return errors.New("Did not add to readings")
@@ -22,11 +22,11 @@ func (db *MockManager) AddReading(r *common.Reading) error {
 }
 
 // GetReadings returns n Readings from MockManager's readings slice
-func (db *MockManager) GetReadings(n int) ([]*common.Reading, error) {
+func (db *MockManager) GetReadings(n int) ([]*models.Reading, error) {
 	if db.readings == nil {
 		return nil, errors.New("There are no readings")
 	}
-	var r []*common.Reading
+	var r []*models.Reading
 	if l := len(db.readings); n > l {
 		r = db.readings[0:l]
 	} else {
@@ -43,50 +43,35 @@ func (db *MockManager) GetCount() (int, error) {
 // NewMockManager returns a shared instance of MockManager, and fills it with
 // dummy data to be used in tests
 func NewMockManager() *MockManager {
-	db := MockManager{}
 	t := time.Now()
-	db.readings = []*common.Reading{
-		&common.Reading{
-			DeviceID:         "hnb123",
-			PH:               7,
-			TDS:              120,
-			WaterTemperature: 78,
-			CreatedAt:        t.Add(-50 * time.Hour),
+	device := models.Device{
+		Identifier: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+		CreatedAt:  t,
+		UpdatedAt:  t,
+	}
+
+	sensorData := models.SensorData{
+		PH:               6.8,
+		TDS:              120,
+		WaterTemperature: 78,
+	}
+
+	db := MockManager{}
+	db.readings = []*models.Reading{
+		&models.Reading{
+			CreatedAt:  t.Add(-50 * time.Hour),
+			SensorData: sensorData,
+			Device:     device,
 		},
-		&common.Reading{
-			DeviceID:         "a7h3g7",
-			PH:               5.8,
-			TDS:              101,
-			WaterTemperature: 72,
-			CreatedAt:        time.Now(),
+		&models.Reading{
+			CreatedAt:  t.Add(-50 * time.Hour),
+			SensorData: sensorData,
+			Device:     device,
 		},
-		&common.Reading{
-			DeviceID:         "j3d9kj",
-			PH:               8.8,
-			TDS:              131,
-			WaterTemperature: 75,
-			CreatedAt:        t.Add(-24 * time.Hour),
-		},
-		&common.Reading{
-			DeviceID:         "k2hgs9",
-			PH:               7.8,
-			TDS:              121,
-			WaterTemperature: 70,
-			CreatedAt:        t.Add(-144 * time.Hour),
-		},
-		&common.Reading{
-			DeviceID:         "d9j3kj",
-			PH:               8.0,
-			TDS:              88,
-			WaterTemperature: 70,
-			CreatedAt:        t.Add(-72 * time.Hour),
-		},
-		&common.Reading{
-			DeviceID:         "kd998d",
-			PH:               4.5,
-			TDS:              95,
-			WaterTemperature: 71,
-			CreatedAt:        t.Add(-240 * time.Hour),
+		&models.Reading{
+			CreatedAt:  t.Add(-50 * time.Hour),
+			SensorData: sensorData,
+			Device:     device,
 		},
 	}
 	return &db

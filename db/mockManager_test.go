@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/crakalakin/aquaponics-data/common"
+	"github.com/crakalakin/aquaponics-data/models"
 	"testing"
 )
 
@@ -18,7 +18,7 @@ func TestNewMockManager(t *testing.T) {
 func TestMockAddReading(t *testing.T) {
 	db := NewMockManager()
 	l := len(db.readings)
-	r := common.Reading{}
+	r := models.Reading{}
 	if err := db.AddReading(&r); err != nil {
 		t.Error("Mock DB should add a reading")
 	}

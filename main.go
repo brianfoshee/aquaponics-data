@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/common"
 	"github.com/crakalakin/aquaponics-data/db"
+	"github.com/crakalakin/aquaponics-data/models"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -70,7 +70,7 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 
 func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reading := common.Reading{}
+		reading := models.Reading{}
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&reading); err != nil {
 			panic(err)
