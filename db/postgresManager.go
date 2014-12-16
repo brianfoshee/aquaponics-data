@@ -3,11 +3,12 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+
 	"github.com/crakalakin/aquaponics-data/models"
 	// github.cocm/lib/pq provides drivers for postgres db
-	_ "github.com/lib/pq"
 	"log"
-	"time"
+
+	_ "github.com/lib/pq"
 )
 
 // PostgresManager represents a connection to a PostgresSQL Database
@@ -31,19 +32,18 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 
 // AddReading saves an instance of Reading to the database
 func (m *PostgresManager) AddReading(r *models.Reading) error {
-	t := time.Now()
 	b, er := json.Marshal(r.SensorData)
 	if er != nil {
 		return er
 	}
 	_, err := m.db.Exec(`
         UPDATE reading
-	SET readings = json_object_set_key(readings, $1, $2::json)
-        WHERE device_id = (
-	        SELECT id
-	        FROM device
-	        WHERE identifier = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22'
-	    )`, t, b)
+				SET readings = json_object_set_key(readings, $1, $2::json)
+				WHERE device_id = (
+					SELECT id
+					FROM device
+					WHERE identifier = $3
+	    )`, r.CreatedAt, b, r.Device.Identifier)
 	if err != nil {
 		return err
 	}

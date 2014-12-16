@@ -2,40 +2,32 @@ package db
 
 import (
 	"database/sql"
-	//"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/crakalakin/aquaponics-data/models"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/crakalakin/aquaponics-data/models"
 )
 
 func TestPostgresAddReading(t *testing.T) {
+	now := time.Now().UTC()
 	uri := os.Getenv("DATABASE_URL")
 	manager, err := NewPostgresManager(uri)
 	defer manager.Close()
 	if err != nil {
 		t.Error("Failed to open database connection")
 	}
-	/*_, err = setupSchema(manager)
+	err = setupSchema(manager)
 	if err != nil {
 		t.Error("Failed to setup schema")
 		t.Error(err)
-	}*/
-
-	var l int
-	err = manager.db.QueryRow("SELECT COUNT(*) FROM reading").Scan(&l)
-	switch {
-	case err == sql.ErrNoRows:
-		t.Error("Error no rows")
-	case err != nil:
-		t.Error("Error", err)
 	}
+
 	device := models.Device{
 		Identifier: "ABC123",
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	sensorData := models.SensorData{
@@ -45,17 +37,21 @@ func TestPostgresAddReading(t *testing.T) {
 	}
 
 	r := models.Reading{
-		CreatedAt:  time.Now(),
+		CreatedAt:  now,
 		SensorData: sensorData,
 		Device:     device,
 	}
 
-	if err := manager.AddReading(&r); err != nil {
-		t.Error("Postgres DB should add a reading\n", err)
-	}
+	var l int
+	err = manager.db.QueryRow(`
+	select count(readings->>$1)
+	from reading
+	where device_id = (
+		select id
+		from device
+		where identifier = 'ABC123'
+	)`, now).Scan(&l)
 
-	/*var al int
-	err = manager.db.QueryRow("SELECT COUNT(*) FROM reading").Scan(&al)
 	switch {
 	case err == sql.ErrNoRows:
 		t.Error("Error no rows in table reading")
@@ -63,18 +59,39 @@ func TestPostgresAddReading(t *testing.T) {
 		t.Error("Error", err)
 	}
 
-	if al != l+1 {
+	if err := manager.AddReading(&r); err != nil {
+		t.Error("Postgres DB should add a reading\n", err)
+	}
+
+	var al int
+	err = manager.db.QueryRow(`
+	select count(readings->>$1)
+	from reading
+	where device_id = (
+		select id
+		from device
+		where identifier = 'ABC123'
+	)`, now).Scan(&al)
+
+	switch {
+	case err == sql.ErrNoRows:
+		t.Error("Error no rows in table reading")
+	case err != nil:
+		t.Error("Error", err)
+	}
+
+	if al != 1 && l != 0 {
 		t.Errorf(
 			`Postgres DB did not insert reading into readings.
 			Expected: %d
 			Actual: %d`,
-			l+1,
+			1,
 			al)
-	}*/
+	}
 
-	/*if err := teardownSchema(manager); err != nil {
-		t.Fatal("Failed to teardown schema")
-	}*/
+	if err := teardownSchema(manager); err != nil {
+		t.Fatal("Failed to teardown schema", err)
+	}
 }
 
 func TestPostgresGetReadings(t *testing.T) {
@@ -86,11 +103,11 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Failed to open database connection")
 	}
 
-	/*_, err = setupSchema(manager)
+	err = setupSchema(manager)
 	if err != nil {
 		t.Error("Failed to setup schema")
 		t.Error(err)
-	}*/
+	}
 
 	/*numReadings := 2
 	readings, err := manager.GetReadings(numReadings)
@@ -110,20 +127,20 @@ func TestPostgresGetReadings(t *testing.T) {
 		panic(err)
 	}*/
 
-	/*if err := teardownSchema(manager); err != nil {
+	if err := teardownSchema(manager); err != nil {
 		t.Fatal("Failed to teardown schema")
-	}*/
+	}
 
 }
 
-func setupSchema(m *PostgresManager) (string, error) {
-	/*_, err := m.db.Exec(`
+func setupSchema(m *PostgresManager) error {
+	_, err := m.db.Exec(`
 		CREATE EXTENSION "uuid-ossp"
 	`)
 	if err != nil {
 		return errors.New("Problem creating extension uuid-ossp")
-	}*/
-	_, err := m.db.Exec(`
+	}
+	_, err = m.db.Exec(`
 		CREATE TABLE if not exists device (
 	    	  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 	          identifier character varying NOT NULL,
@@ -132,7 +149,7 @@ func setupSchema(m *PostgresManager) (string, error) {
 		)
 	`)
 	if err != nil {
-		return "", errors.New("Problem creating table device")
+		return errors.New("Problem creating table device")
 	}
 
 	_, err = m.db.Exec(`
@@ -142,15 +159,15 @@ func setupSchema(m *PostgresManager) (string, error) {
 	    	)
 	`)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	/*_, err = m.db.Exec(`
+	_, err = m.db.Exec(`
 		CREATE INDEX reading_device_id ON reading (device_id)
 	`)
 	if err != nil {
 		return errors.New("Problem creating index on reading")
-	}*/
+	}
 
 	_, err = m.db.Exec(`
 		CREATE OR REPLACE FUNCTION "json_object_set_key"(
@@ -175,52 +192,67 @@ func setupSchema(m *PostgresManager) (string, error) {
 		$function$
 	`)
 	if err != nil {
-		return "", errors.New("Problem creating json upsert function")
+		return errors.New("Problem creating json upsert function")
 	}
 
-	_, err = m.db.Exec("insert into device (identifier) values ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22')")
+	_, err = m.db.Exec("insert into device (identifier) values ('ABC123')")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	var deviceID string
 	err = m.db.QueryRow("SELECT id from device").Scan(&deviceID)
 	switch {
 	case err == sql.ErrNoRows:
-		return "", errors.New("No rows in 'device' table")
+		return errors.New("No rows in 'device' table")
 	case err != nil:
-		return "", err
+		return err
 	}
 
 	t := time.Now()
 
-	reading1 := fmt.Sprintf("{%q: {\"ph\": \"6.2\", \"tds\": \"750\", \"water_temperature\": \"72.21\"}}", t)
-	/*reading2 := fmt.Sprintf("{%q: {\"ph\": \"6.1\", \"tds\": \"740\", \"water_temperature\": \"72.11\"}}",t.Add(-24 * time.Hour))
-	reading3 := fmt.Sprintf("{%q: {\"ph\": \"6.0\", \"tds\": \"730\", \"water_temperature\": \"72.01\"}}",t.Add(-48 * time.Hour))*/
-
-	_, err = m.db.Exec("insert into reading (device_id, readings) values ($1, $2)", deviceID, reading1)
+	_, err = m.db.Exec("insert into reading (device_id) values ($1)", deviceID)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	/*	_, err = m.db.Exec("insert into reading (device_id, readings) values ($1, $2)", deviceID, reading2)
-			if err != nil {
-		               return err
-		        }
+	_, err = m.db.Exec(`
+	UPDATE reading
+	SET readings = json_object_set_key(readings, $1, '{"ph":4, "tds":121, "water_temperature": 72.21}'::json)
+	WHERE device_id = $2`, t.UTC().Format(time.RFC3339), deviceID)
+	if err != nil {
+		return err
+	}
 
-			_, err = m.db.Exec("insert into reading (device_id, readings) values ($1, $2)", deviceID, reading3)
-			if err != nil {
-		               return err
-		        }*/
+	_, err = m.db.Exec(`
+	UPDATE reading
+	SET readings = json_object_set_key(readings, $1, '{"ph": 6.1, "tds":740, "water_temperature": 72.11}'::json)
+	WHERE device_id = $2`, t.Add(-24*time.Hour).UTC().Format(time.RFC3339), deviceID)
+	if err != nil {
+		return err
+	}
 
-	return deviceID, nil
+	_, err = m.db.Exec(`
+	UPDATE reading
+	SET readings = json_object_set_key(readings, $1, '{"ph": 6.0, "tds":730, "water_temperature": 72.01}'::json)
+	WHERE device_id = $2`, t.Add(-48*time.Hour).UTC().Format(time.RFC3339), deviceID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
 func teardownSchema(m *PostgresManager) error {
 	_, err := m.db.Exec("DROP TABLE reading")
 	if err != nil {
 		return err
 	}
 	_, err = m.db.Exec("DROP TABLE device")
+	if err != nil {
+		return err
+	}
+	_, err = m.db.Exec(`DROP EXTENSION "uuid-ossp"`)
 	if err != nil {
 		return err
 	}
