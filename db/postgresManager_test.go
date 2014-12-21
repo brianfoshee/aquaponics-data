@@ -2,12 +2,12 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"github.com/crakalakin/aquaponics-data/models"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/crakalakin/aquaponics-data/models"
 )
 
 func TestPostgresAddReading(t *testing.T) {
@@ -109,28 +109,23 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error(err)
 	}
 
-	/*numReadings := 2
-	readings, err := manager.GetReadings(numReadings)
+	readings, err := manager.GetReadings()
 	if err != nil {
-		panic(err)
+		t.Error(err)
 	}
-	if readings == "" {
+
+	if readings == nil {
 		t.Error("Database did not return any readings")
-	}
-	if len(readings) > numReadings {
-		t.Error("Database returned too many readings")
 	}
 
 	_, err = json.Marshal(readings)
 	if err != nil {
-		t.Error("Unable to marshal data received from database")
-		panic(err)
-	}*/
+		t.Error("Unable to marshal readings received from database")
+	}
 
 	if err := teardownSchema(manager); err != nil {
 		t.Fatal("Failed to teardown schema")
 	}
-
 }
 
 func setupSchema(m *PostgresManager) error {

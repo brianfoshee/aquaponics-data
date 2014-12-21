@@ -3,11 +3,9 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-
 	"github.com/crakalakin/aquaponics-data/models"
-	// github.cocm/lib/pq provides drivers for postgres db
 	"log"
-
+	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )
 
@@ -37,12 +35,12 @@ func (m *PostgresManager) AddReading(r *models.Reading) error {
 		return er
 	}
 	_, err := m.db.Exec(`
-        UPDATE reading
-				SET readings = json_object_set_key(readings, $1, $2::json)
-				WHERE device_id = (
-					SELECT id
-					FROM device
-					WHERE identifier = $3
+		UPDATE reading
+		SET readings = json_object_set_key(readings, $1, $2::json)
+			WHERE device_id = (
+				SELECT id
+				FROM device
+				WHERE identifier = $3
 	    )`, r.CreatedAt, b, r.Device.Identifier)
 	if err != nil {
 		return err
@@ -52,40 +50,28 @@ func (m *PostgresManager) AddReading(r *models.Reading) error {
 }
 
 // GetReadings gets n instances of Readings from the database
-//func (m *PostgresManager) GetReadings(n int) ([]*models.Reading, error) {
-func (m *PostgresManager) GetReadings(n int) (string, error) {
-	if n < 1 {
-		panic("Invalid request - zero or negative number of readings")
-	}
-
-	//var readings []*models.Reading
-	rows, err := m.db.Query(
-		"select * from reading where device_id = $1",
-		"a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
-	)
+func (m *PostgresManager) GetReadings() (json.RawMessage, error) {
+	var s string
+	err := m.db.QueryRow(`
+		SELECT to_json(readings) 
+		FROM reading 
+		WHERE device_id = ( 
+			SELECT id
+			FROM device
+			WHERE identifier = 'ABC123'
+		)
+	`).Scan(&s)
 	if err != nil {
-		return "", err
-	}
-	defer rows.Close()
-
-	var sensorData string
-	var deviceID string
-
-	for rows.Next() {
-		//var reading models.Reading
-		//if err := rows.Scan(&reading.PH, &reading.TDS, &reading.WaterTemperature, &reading.Device.Identifier, &reading.CreatedAt); err != nil {
-		//	return nil, err
-		//}
-		if err := rows.Scan(&deviceID, &sensorData); err != nil {
-			return "", err
-		}
-		//readings = append(readings, &reading)
+		return nil, err
 	}
 
-	if err := rows.Err(); err != nil {
-		return "", err
+	var readings json.RawMessage
+	err = json.Unmarshal([]byte(s), &readings)
+	if err != nil {
+		return nil, err
 	}
-	return sensorData, nil
+
+	return readings, nil
 }
 
 // GetCount returns the number of readings in PostgresManager
