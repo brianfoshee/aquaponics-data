@@ -96,6 +96,7 @@ func TestPostgresAddReading(t *testing.T) {
 }
 
 func TestPostgresGetReadings(t *testing.T) {
+	now := time.Now().UTC()
 	uri := os.Getenv("DATABASE_URL")
 	manager, err := NewPostgresManager(uri)
 	defer manager.Close()
@@ -110,7 +111,13 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error(err)
 	}
 
-	readings, err := manager.GetReadings()
+	device := models.Device{
+		Identifier: "ABC123",
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+
+	readings, err := manager.GetReadings(&device)
 	if err != nil {
 		t.Error(err)
 	}
