@@ -1,15 +1,17 @@
 package db
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/crakalakin/aquaponics-data/models"
 	"time"
+
+	"github.com/crakalakin/aquaponics-data/models"
 )
 
 // MockManager holds a slice of Readings for tests which require mocked
 // data to be present.
 type MockManager struct {
-	readings []*models.Reading
+	readings models.Readings
 }
 
 // AddReading adds a single reading to the slice of Readings in MockManager.
@@ -22,17 +24,21 @@ func (db *MockManager) AddReading(r *models.Reading) error {
 }
 
 // GetReadings returns n Readings from MockManager's readings slice
-func (db *MockManager) GetReadings(n int) ([]*models.Reading, error) {
+func (db *MockManager) GetReadings(d *models.Device) (json.RawMessage, error) {
 	if db.readings == nil {
 		return nil, errors.New("There are no readings")
 	}
-	var r []*models.Reading
-	if l := len(db.readings); n > l {
-		r = db.readings[0:l]
-	} else {
-		r = db.readings[0:n]
+	r := db.readings
+	b := []byte{}
+
+	for _, reading := range r {
+		j, err := json.Marshal(reading.SensorData)
+		if err != nil {
+			return nil, errors.New("Could not unmarshal sensordata into json")
+		}
+		b = append(b, j...)
 	}
-	return r, nil
+	return json.RawMessage(b), nil
 }
 
 // GetCount returns the number of readings in MockManager
@@ -50,27 +56,39 @@ func NewMockManager() *MockManager {
 		UpdatedAt:  t,
 	}
 
-	sensorData := models.SensorData{
-		PH:               6.8,
-		TDS:              120,
-		WaterTemperature: 78,
+	sensorData := []models.SensorData{
+		{
+			PH:               6.8,
+			TDS:              120,
+			WaterTemperature: 78,
+		},
+		{
+			PH:               4.8,
+			TDS:              380,
+			WaterTemperature: 79,
+		},
+		{
+			PH:               3.8,
+			TDS:              10,
+			WaterTemperature: 78,
+		},
 	}
 
 	db := MockManager{}
-	db.readings = []*models.Reading{
+	db.readings = models.Readings{
 		&models.Reading{
 			CreatedAt:  t.Add(-50 * time.Hour),
-			SensorData: sensorData,
+			SensorData: sensorData[0],
 			Device:     device,
 		},
 		&models.Reading{
-			CreatedAt:  t.Add(-50 * time.Hour),
-			SensorData: sensorData,
+			CreatedAt:  t.Add(-39 * time.Hour),
+			SensorData: sensorData[1],
 			Device:     device,
 		},
 		&models.Reading{
-			CreatedAt:  t.Add(-50 * time.Hour),
-			SensorData: sensorData,
+			CreatedAt:  t.Add(-28 * time.Hour),
+			SensorData: sensorData[2],
 			Device:     device,
 		},
 	}

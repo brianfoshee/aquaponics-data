@@ -1,8 +1,9 @@
 package db
 
 import (
-	"github.com/crakalakin/aquaponics-data/models"
 	"testing"
+
+	"github.com/crakalakin/aquaponics-data/models"
 )
 
 func TestNewMockManager(t *testing.T) {
@@ -34,14 +35,14 @@ func TestMockAddReading(t *testing.T) {
 
 func TestMockGetReadings(t *testing.T) {
 	db := NewMockManager()
-	r, err := db.GetReadings(5)
+	device := &models.Device{
+		Identifier: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+	}
+	r, err := db.GetReadings(device)
 	if err != nil {
 		t.Error("Error getting readings")
 	}
 	if r == nil {
 		t.Error("Readings should not be nil")
-	}
-	if len(r) > 5 {
-		t.Error("Returned too many readings")
 	}
 }

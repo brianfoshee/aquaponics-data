@@ -39,4 +39,4 @@ type Reading struct {
 }
 
 // Readings represents a bunch of readings
-type Readings []Reading
+type Readings []*Reading
