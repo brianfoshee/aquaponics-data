@@ -3,8 +3,9 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/models"
 	"log"
+
+	"github.com/crakalakin/aquaponics-data/models"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )
@@ -50,17 +51,17 @@ func (m *PostgresManager) AddReading(r *models.Reading) error {
 }
 
 // GetReadings gets n instances of Readings from the database
-func (m *PostgresManager) GetReadings() (json.RawMessage, error) {
+func (m *PostgresManager) GetReadings(d *models.Device) (json.RawMessage, error) {
 	var s string
 	err := m.db.QueryRow(`
-		SELECT to_json(readings) 
-		FROM reading 
-		WHERE device_id = ( 
+		SELECT to_json(readings)
+		FROM reading
+		WHERE device_id = (
 			SELECT id
 			FROM device
-			WHERE identifier = 'ABC123'
+			WHERE identifier = $1
 		)
-	`).Scan(&s)
+	`, d.Identifier).Scan(&s)
 	if err != nil {
 		return nil, err
 	}

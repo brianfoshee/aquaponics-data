@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/crakalakin/aquaponics-data/models"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/crakalakin/aquaponics-data/models"
 )
 
 func TestPostgresAddReading(t *testing.T) {
