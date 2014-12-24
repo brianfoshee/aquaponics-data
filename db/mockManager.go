@@ -3,9 +3,8 @@ package db
 import (
 	"encoding/json"
 	"errors"
-	"time"
-
 	"github.com/crakalakin/aquaponics-data/models"
+	"time"
 )
 
 // MockManager holds a slice of Readings for tests which require mocked
@@ -37,6 +36,8 @@ func (db *MockManager) GetReadings(d *models.Device) (json.RawMessage, error) {
 			return nil, errors.New("Could not unmarshal sensordata into json")
 		}
 		b = append(b, j...)
+		b = append(b, ',')
+
 	}
 	return json.RawMessage(b), nil
 }
@@ -51,7 +52,7 @@ func (db *MockManager) GetCount() (int, error) {
 func NewMockManager() *MockManager {
 	t := time.Now()
 	device := models.Device{
-		Identifier: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+		Identifier: "ABC123",
 		CreatedAt:  t,
 		UpdatedAt:  t,
 	}

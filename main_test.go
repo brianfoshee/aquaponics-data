@@ -59,14 +59,15 @@ func TestAddReading(t *testing.T) {
 		t.Error(err)
 	}
 
-	req, err := http.NewRequest("POST", "/devices/ABC123/readings", bytes.NewBuffer(b))
+	// Valid 'POST' Request
+	// Server should respond with HTTP Status Created
+	validRequest, err := http.NewRequest("POST", "/devices/ABC123/readings", bytes.NewBuffer(b))
 	if err != nil {
 		t.Error(err)
 	}
 
 	w := httptest.NewRecorder()
-
-	Router(mockManager).ServeHTTP(w, req)
+	Router(mockManager).ServeHTTP(w, validRequest)
 
 	if w.Code != http.StatusCreated {
 		t.Error("addReadingHandler returned http status code: ", w.Code)

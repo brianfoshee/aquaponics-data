@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/crakalakin/aquaponics-data/db"
 	"github.com/crakalakin/aquaponics-data/models"
 	"github.com/gorilla/mux"
@@ -42,13 +43,7 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 		vars := mux.Vars(r)
 		deviceID := vars["id"]
 
-		if deviceID == "" {
-			http.Error(w, "StatusBadRequest", http.StatusBadRequest)
-			return
-		}
-
 		now := time.Now().UTC()
-
 		device := models.Device{
 			Identifier: deviceID,
 			CreatedAt:  now,
@@ -58,18 +53,19 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 		readings, err := mgr.GetReadings(&device)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			log.Fatal(err)
+			log.Println(err)
 			return
 		}
 
-		data, err := json.Marshal(readings)
+		data, err := json.Marshal(&readings)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			log.Fatal(err)
+			log.Printf("ERROR: Unable to Marshal data returned by mgr.GetReadings() for device with identifier %v", device.Identifier)
 			return
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
@@ -80,8 +76,11 @@ func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Reque
 		vars := mux.Vars(r)
 		deviceID := vars["id"]
 
+		fmt.Println(deviceID)
+
 		if deviceID == "" {
 			http.Error(w, "StatusBadRequest", http.StatusBadRequest)
+			log.Printf("ERROR: addReadingHandler() called with empty device identifier")
 			return
 		}
 

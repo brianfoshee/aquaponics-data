@@ -3,9 +3,8 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
-
 	"github.com/crakalakin/aquaponics-data/models"
+	"log"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )
@@ -31,11 +30,11 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 
 // AddReading saves an instance of Reading to the database
 func (m *PostgresManager) AddReading(r *models.Reading) error {
-	b, er := json.Marshal(r.SensorData)
-	if er != nil {
-		return er
+	b, err := json.Marshal(r.SensorData)
+	if err != nil {
+		return err
 	}
-	_, err := m.db.Exec(`
+	result, err := m.db.Exec(`
 		UPDATE reading
 		SET readings = json_object_set_key(readings, $1, $2::json)
 			WHERE device_id = (
@@ -45,6 +44,15 @@ func (m *PostgresManager) AddReading(r *models.Reading) error {
 	    )`, r.CreatedAt, b, r.Device.Identifier)
 	if err != nil {
 		return err
+	}
+
+	newRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if newRows != 1 {
+		log.Printf("ERROR: Manager.AddReading() did not add new reading for device with identifier %v", r.Device.Identifier)
+		// Need to return status code, to inform client that no work was done
 	}
 
 	return nil
@@ -62,7 +70,11 @@ func (m *PostgresManager) GetReadings(d *models.Device) (json.RawMessage, error)
 			WHERE identifier = $1
 		)
 	`, d.Identifier).Scan(&s)
-	if err != nil {
+
+	switch {
+	case err == sql.ErrNoRows:
+		return json.RawMessage("{}"), nil
+	case err != nil:
 		return nil, err
 	}
 
