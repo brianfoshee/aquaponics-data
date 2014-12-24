@@ -2,14 +2,23 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/common"
+	"fmt"
 	"github.com/crakalakin/aquaponics-data/db"
+	"github.com/crakalakin/aquaponics-data/models"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+	"time"
 )
+
+// Router abstracts http routes for the application
+func Router(mgr db.Manager) *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(mgr)).Methods("GET")
+	r.HandleFunc("/devices/{id}/readings", addReadingHandler(mgr)).Methods("POST")
+	return r
+}
 
 func main() {
 	var mgr *db.PostgresManager
@@ -20,9 +29,7 @@ func main() {
 	}
 	defer mgr.Close()
 
-	r := mux.NewRouter()
-	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(mgr)).Methods("GET")
-	r.HandleFunc("/devices/{id}/readings", addReadingHandler(mgr)).Methods("POST")
+	r := Router(mgr)
 	http.Handle("/", r)
 
 	err = http.ListenAndServe(":"+os.Getenv("PORT"), nil)
@@ -33,36 +40,32 @@ func main() {
 
 func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//vars := mux.Vars(r)
-		//deviceID := vars["id"]
+		vars := mux.Vars(r)
+		deviceID := vars["id"]
 
-		params := r.URL.Query()
-		numReadings, err := strconv.Atoi(params.Get("number"))
-		if err != nil {
-			http.Error(w, "Requested non-integer number of readings", http.StatusBadRequest)
-			return
+		now := time.Now().UTC()
+		device := models.Device{
+			Identifier: deviceID,
+			CreatedAt:  now,
+			UpdatedAt:  now,
 		}
 
-		if numReadings < 1 {
-			http.Error(w, "Requested negative or zero number of readings", http.StatusBadRequest)
-			return
-		}
-
-		readings, err := mgr.GetReadings(numReadings)
+		readings, err := mgr.GetReadings(&device)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			log.Fatal(err)
+			log.Println(err)
 			return
 		}
 
-		data, err := json.Marshal(readings)
+		data, err := json.Marshal(&readings)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			log.Fatal(err)
+			log.Printf("ERROR: Unable to Marshal data returned by mgr.GetReadings() for device with identifier %v", device.Identifier)
 			return
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
 	}
@@ -70,10 +73,25 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 
 func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		reading := common.Reading{}
+		vars := mux.Vars(r)
+		deviceID := vars["id"]
+
+		fmt.Println(deviceID)
+
+		if deviceID == "" {
+			http.Error(w, "StatusBadRequest", http.StatusBadRequest)
+			log.Printf("ERROR: addReadingHandler() called with empty device identifier")
+			return
+		}
+
+		reading := models.Reading{}
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&reading); err != nil {
 			panic(err)
+		}
+
+		reading.Device = models.Device{
+			Identifier: deviceID,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

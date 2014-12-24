@@ -1,19 +1,20 @@
 package db
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/crakalakin/aquaponics-data/common"
+	"github.com/crakalakin/aquaponics-data/models"
 	"time"
 )
 
 // MockManager holds a slice of Readings for tests which require mocked
 // data to be present.
 type MockManager struct {
-	readings []*common.Reading
+	readings models.Readings
 }
 
 // AddReading adds a single reading to the slice of Readings in MockManager.
-func (db *MockManager) AddReading(r *common.Reading) error {
+func (db *MockManager) AddReading(r *models.Reading) error {
 	db.readings = append(db.readings, r)
 	if db.readings == nil {
 		return errors.New("Did not add to readings")
@@ -22,17 +23,23 @@ func (db *MockManager) AddReading(r *common.Reading) error {
 }
 
 // GetReadings returns n Readings from MockManager's readings slice
-func (db *MockManager) GetReadings(n int) ([]*common.Reading, error) {
+func (db *MockManager) GetReadings(d *models.Device) (json.RawMessage, error) {
 	if db.readings == nil {
 		return nil, errors.New("There are no readings")
 	}
-	var r []*common.Reading
-	if l := len(db.readings); n > l {
-		r = db.readings[0:l]
-	} else {
-		r = db.readings[0:n]
+	r := db.readings
+	b := []byte{}
+
+	for _, reading := range r {
+		j, err := json.Marshal(reading.SensorData)
+		if err != nil {
+			return nil, errors.New("Could not unmarshal sensordata into json")
+		}
+		b = append(b, j...)
+		b = append(b, ',')
+
 	}
-	return r, nil
+	return json.RawMessage(b), nil
 }
 
 // GetCount returns the number of readings in MockManager
@@ -43,50 +50,47 @@ func (db *MockManager) GetCount() (int, error) {
 // NewMockManager returns a shared instance of MockManager, and fills it with
 // dummy data to be used in tests
 func NewMockManager() *MockManager {
-	db := MockManager{}
 	t := time.Now()
-	db.readings = []*common.Reading{
-		&common.Reading{
-			DeviceID:         "hnb123",
-			PH:               7,
+	device := models.Device{
+		Identifier: "ABC123",
+		CreatedAt:  t,
+		UpdatedAt:  t,
+	}
+
+	sensorData := []models.SensorData{
+		{
+			PH:               6.8,
 			TDS:              120,
 			WaterTemperature: 78,
-			CreatedAt:        t.Add(-50 * time.Hour),
 		},
-		&common.Reading{
-			DeviceID:         "a7h3g7",
-			PH:               5.8,
-			TDS:              101,
-			WaterTemperature: 72,
-			CreatedAt:        time.Now(),
+		{
+			PH:               4.8,
+			TDS:              380,
+			WaterTemperature: 79,
 		},
-		&common.Reading{
-			DeviceID:         "j3d9kj",
-			PH:               8.8,
-			TDS:              131,
-			WaterTemperature: 75,
-			CreatedAt:        t.Add(-24 * time.Hour),
+		{
+			PH:               3.8,
+			TDS:              10,
+			WaterTemperature: 78,
 		},
-		&common.Reading{
-			DeviceID:         "k2hgs9",
-			PH:               7.8,
-			TDS:              121,
-			WaterTemperature: 70,
-			CreatedAt:        t.Add(-144 * time.Hour),
+	}
+
+	db := MockManager{}
+	db.readings = models.Readings{
+		&models.Reading{
+			CreatedAt:  t.Add(-50 * time.Hour),
+			SensorData: sensorData[0],
+			Device:     device,
 		},
-		&common.Reading{
-			DeviceID:         "d9j3kj",
-			PH:               8.0,
-			TDS:              88,
-			WaterTemperature: 70,
-			CreatedAt:        t.Add(-72 * time.Hour),
+		&models.Reading{
+			CreatedAt:  t.Add(-39 * time.Hour),
+			SensorData: sensorData[1],
+			Device:     device,
 		},
-		&common.Reading{
-			DeviceID:         "kd998d",
-			PH:               4.5,
-			TDS:              95,
-			WaterTemperature: 71,
-			CreatedAt:        t.Add(-240 * time.Hour),
+		&models.Reading{
+			CreatedAt:  t.Add(-28 * time.Hour),
+			SensorData: sensorData[2],
+			Device:     device,
 		},
 	}
 	return &db

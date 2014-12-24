@@ -2,10 +2,11 @@ package db
 
 import (
 	"database/sql"
-	"github.com/crakalakin/aquaponics-data/common"
+	"encoding/json"
+	"github.com/crakalakin/aquaponics-data/models"
+	"log"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
-	"log"
 )
 
 // PostgresManager represents a connection to a PostgresSQL Database
@@ -28,50 +29,68 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 }
 
 // AddReading saves an instance of Reading to the database
-func (m *PostgresManager) AddReading(r *common.Reading) error {
-	_, err := m.db.Exec("insert into readings (device_id, ph, tds, water_temperature, created_at) values ($1, $2, $3, $4, $5)",
-		r.DeviceID, r.PH, r.TDS, r.WaterTemperature, r.CreatedAt)
+func (m *PostgresManager) AddReading(r *models.Reading) error {
+	b, err := json.Marshal(r.SensorData)
 	if err != nil {
 		return err
 	}
+	result, err := m.db.Exec(`
+		UPDATE reading
+		SET readings = json_object_set_key(readings, $1, $2::json)
+			WHERE device_id = (
+				SELECT id
+				FROM device
+				WHERE identifier = $3
+	    )`, r.CreatedAt, b, r.Device.Identifier)
+	if err != nil {
+		return err
+	}
+
+	newRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if newRows != 1 {
+		log.Printf("ERROR: Manager.AddReading() did not add new reading for device with identifier %v", r.Device.Identifier)
+		// Need to return status code, to inform client that no work was done
+	}
+
 	return nil
 }
 
 // GetReadings gets n instances of Readings from the database
-func (m *PostgresManager) GetReadings(n int) ([]*common.Reading, error) {
-	if n < 1 {
-		panic("Invalid request - zero or negative number of readings")
+func (m *PostgresManager) GetReadings(d *models.Device) (json.RawMessage, error) {
+	var s string
+	err := m.db.QueryRow(`
+		SELECT to_json(readings)
+		FROM reading
+		WHERE device_id = (
+			SELECT id
+			FROM device
+			WHERE identifier = $1
+		)
+	`, d.Identifier).Scan(&s)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return json.RawMessage("{}"), nil
+	case err != nil:
+		return nil, err
 	}
 
-	var readings []*common.Reading
-	rows, err := m.db.Query(
-		"select * from readings where device_id = $1 order by created_at desc limit $2",
-		"343",
-		n,
-	)
+	var readings json.RawMessage
+	err = json.Unmarshal([]byte(s), &readings)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var reading common.Reading
-		if err := rows.Scan(&reading.PH, &reading.TDS, &reading.WaterTemperature, &reading.DeviceID, &reading.CreatedAt); err != nil {
-			return nil, err
-		}
-		readings = append(readings, &reading)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
 	return readings, nil
 }
 
 // GetCount returns the number of readings in PostgresManager
 func (m *PostgresManager) GetCount() (int, error) {
 	var countReadings int
-	err := m.db.QueryRow("SELECT COUNT(*) FROM readings").Scan(&countReadings)
+	err := m.db.QueryRow("SELECT COUNT(*) FROM reading").Scan(&countReadings)
 	if err != nil {
 		return 0, err
 	}

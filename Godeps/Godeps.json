@@ -1,7 +1,18 @@
 {
 	"ImportPath": "github.com/crakalakin/aquaponics-data",
 	"GoVersion": "go1.3.3",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
+		{
+			"ImportPath": "bitbucket.org/liamstask/goose/cmd/goose",
+			"Rev": "a72c5a598e6d2460e918893e48e24e4d5f27c981"
+		},
+		{
+			"ImportPath": "bitbucket.org/liamstask/goose/lib/goose",
+			"Rev": "a72c5a598e6d2460e918893e48e24e4d5f27c981"
+		},
 		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "14f550f51af52180c2eefed15e5fd18d63c0a64a"
@@ -11,8 +22,32 @@
 			"Rev": "e444e69cbd2e2e3e0749a2f3c717cec491552bbf"
 		},
 		{
+			"ImportPath": "github.com/kylelemons/go-gypsy/yaml",
+			"Comment": "go.weekly.2011-11-02-17-g0ddb27c",
+			"Rev": "0ddb27ce74ade2ca988ec85587d636e10312dfc6"
+		},
+		{
 			"ImportPath": "github.com/lib/pq",
 			"Rev": "fbed41b4c063a307ab21bf37ae6705519fb34ca3"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Rev": "d10e2c8f62100097910367dee90a9bd89d426a44"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/godrv",
+			"Comment": "v1.5.3-21-g261574e",
+			"Rev": "261574e2f4a9d9d2d81a8f996105c8c835bfe19b"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/mysql",
+			"Comment": "v1.5.3-21-g261574e",
+			"Rev": "261574e2f4a9d9d2d81a8f996105c8c835bfe19b"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/native",
+			"Comment": "v1.5.3-21-g261574e",
+			"Rev": "261574e2f4a9d9d2d81a8f996105c8c835bfe19b"
 		}
 	]
 }
