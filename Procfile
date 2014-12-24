@@ -1,1 +1,1 @@
-web: webz
+web: aquaponics-data
