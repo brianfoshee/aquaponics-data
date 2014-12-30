@@ -25,6 +25,10 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 		log.Print("Error on opening database connection: ", err)
 		return nil, err
 	}
+	// Setting max connections to 20 due to herokus free postgres tier
+	// limiting max connections to 20
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(100)
 	return &PostgresManager{db}, nil
 }
 
