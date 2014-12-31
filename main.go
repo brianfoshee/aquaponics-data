@@ -76,8 +76,6 @@ func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Reque
 		vars := mux.Vars(r)
 		deviceID := vars["id"]
 
-		fmt.Println(deviceID)
-
 		if deviceID == "" {
 			http.Error(w, "StatusBadRequest", http.StatusBadRequest)
 			log.Printf("ERROR: addReadingHandler() called with empty device identifier")
@@ -93,10 +91,6 @@ func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Reque
 		reading.Device = models.Device{
 			Identifier: deviceID,
 		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-
 		if err := mgr.AddReading(&reading); err != nil {
 			panic(err)
 		}
@@ -105,6 +99,9 @@ func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			panic(err)
 		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 		w.Write(data)
 	}
 }
