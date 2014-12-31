@@ -40,7 +40,7 @@ func (m *PostgresManager) AddReading(r *models.Reading) error {
 	}
 	result, err := m.db.Exec(`
 		UPDATE reading
-		SET readings = json_object_set_key(readings, $1, $2::json)
+		SET readings = json_object_set_key(readings, $1, $2::jsonb)
 			WHERE device_id = (
 				SELECT id
 				FROM device
