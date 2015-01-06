@@ -144,11 +144,11 @@ func setupSchema(m *PostgresManager) error {
 		return errors.New("Problem creating extension uuid-ossp")
 	}
 	_, err = m.db.Exec(`
-		CREATE TABLE if not exists device (
-	    	  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-	          identifier character varying NOT NULL,
-		  updated_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-		  created_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')
+		CREATE TABLE device (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			identifier character varying NOT NULL,
+			updated_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+			created_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')
 		)
 	`)
 	if err != nil {
@@ -156,10 +156,10 @@ func setupSchema(m *PostgresManager) error {
 	}
 
 	_, err = m.db.Exec(`
-		CREATE TABLE if not exists reading (
+		CREATE TABLE reading (
 		  device_id uuid NOT NULL REFERENCES device (id) ON DELETE CASCADE,
-	    	  readings json NOT NULL DEFAULT '{}'::json
-	    	)
+			readings jsonb NOT NULL DEFAULT '{}'::jsonb
+	  )
 	`)
 	if err != nil {
 		return err
@@ -174,11 +174,11 @@ func setupSchema(m *PostgresManager) error {
 
 	_, err = m.db.Exec(`
 		CREATE OR REPLACE FUNCTION "json_object_set_key"(
-		  "json"          json,
-	    	  "key_to_set"    TEXT,
-	      	  "value_to_set"  anyelement
-	      	)
-	          RETURNS json
+		  "jsonb"          jsonb,
+		  "key_to_set"    TEXT,
+		  "value_to_set"  anyelement
+		)
+		  RETURNS jsonb
 		  LANGUAGE sql
 		  IMMUTABLE
 		  STRICT
@@ -186,14 +186,15 @@ func setupSchema(m *PostgresManager) error {
 		SELECT COALESCE(
 		  (SELECT ('{' || string_agg(to_json("key") || ':' || "value", ',') || '}')
 		     FROM (SELECT *
-               		   FROM json_each("json")
-		           WHERE "key" <> "key_to_set"
-	                   UNION ALL
-		           SELECT "key_to_set", to_json("value_to_set")) AS "fields"),
+		             FROM jsonb_each("jsonb")
+		            WHERE "key" <> "key_to_set"
+		            UNION ALL
+		           SELECT "key_to_set", "value_to_set") AS "fields"),
 		  '{}'
-	        )::json
-		$function$
+		)::jsonb
+		$function$;
 	`)
+
 	if err != nil {
 		return errors.New("Problem creating json upsert function")
 	}
@@ -221,7 +222,7 @@ func setupSchema(m *PostgresManager) error {
 
 	_, err = m.db.Exec(`
 	UPDATE reading
-	SET readings = json_object_set_key(readings, $1, '{"ph":4, "tds":121, "water_temperature": 72.21}'::json)
+	SET readings = json_object_set_key(readings, $1, '{"ph":4, "tds":121, "water_temperature": 72.21}'::jsonb)
 	WHERE device_id = $2`, t.UTC().Format(time.RFC3339), deviceID)
 	if err != nil {
 		return err
@@ -229,7 +230,7 @@ func setupSchema(m *PostgresManager) error {
 
 	_, err = m.db.Exec(`
 	UPDATE reading
-	SET readings = json_object_set_key(readings, $1, '{"ph": 6.1, "tds":740, "water_temperature": 72.11}'::json)
+	SET readings = json_object_set_key(readings, $1, '{"ph": 6.1, "tds":740, "water_temperature": 72.11}'::jsonb)
 	WHERE device_id = $2`, t.Add(-24*time.Hour).UTC().Format(time.RFC3339), deviceID)
 	if err != nil {
 		return err
@@ -237,7 +238,7 @@ func setupSchema(m *PostgresManager) error {
 
 	_, err = m.db.Exec(`
 	UPDATE reading
-	SET readings = json_object_set_key(readings, $1, '{"ph": 6.0, "tds":730, "water_temperature": 72.01}'::json)
+	SET readings = json_object_set_key(readings, $1, '{"ph": 6.0, "tds":730, "water_temperature": 72.01}'::jsonb)
 	WHERE device_id = $2`, t.Add(-48*time.Hour).UTC().Format(time.RFC3339), deviceID)
 	if err != nil {
 		return err
