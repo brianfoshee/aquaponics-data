@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/crakalakin/aquaponics-data/db"
@@ -21,6 +22,7 @@ func Router(mgr db.Manager) *mux.Router {
 }
 
 func main() {
+	runtime.GOMAXPROCS(4)
 	var mgr *db.PostgresManager
 	var err error
 	mgr, err = db.NewPostgresManager(os.Getenv("DATABASE_URL"))
