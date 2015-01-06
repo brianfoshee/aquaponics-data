@@ -2,14 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/crakalakin/aquaponics-data/db"
-	"github.com/crakalakin/aquaponics-data/models"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/crakalakin/aquaponics-data/db"
+	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/gorilla/mux"
 )
 
 // Router abstracts http routes for the application
