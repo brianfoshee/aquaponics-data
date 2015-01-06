@@ -3,8 +3,9 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/models"
 	"log"
+
+	"github.com/crakalakin/aquaponics-data/models"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )
@@ -22,7 +23,7 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 		return nil, err
 	}
 	if err := db.Ping(); err != nil {
-		log.Print("Error on opening database connection: ", err)
+		log.Print("Error on pinging database connection: ", err)
 		return nil, err
 	}
 	// Setting max connections to 20 due to herokus free postgres tier
