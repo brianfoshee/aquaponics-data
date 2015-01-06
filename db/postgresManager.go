@@ -3,8 +3,9 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/models"
 	"log"
+
+	"github.com/crakalakin/aquaponics-data/models"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )
@@ -27,8 +28,8 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 	}
 	// Setting max connections to 20 due to herokus free postgres tier
 	// limiting max connections to 20
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(19)
+	db.SetMaxOpenConns(12)
+	db.SetMaxIdleConns(4)
 	return &PostgresManager{db}, nil
 }
 
