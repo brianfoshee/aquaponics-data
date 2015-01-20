@@ -51,6 +51,7 @@ func (c client) run() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		time.Sleep(2 * time.Second)
 	}
 	wg.Done()
 }
@@ -60,7 +61,7 @@ var wg sync.WaitGroup
 func main() {
 	fmt.Println("Started")
 	runtime.GOMAXPROCS(4)
-	for i := 1; i <= 1000; i++ {
+	for i := 1; i <= 100; i++ {
 		c := client{name: "MockClient" + strconv.Itoa(i)}
 		wg.Add(1)
 		go c.run()
