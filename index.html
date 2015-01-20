@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">	
+        <title id="title">Prazyo Monitoring</title>
+        <script src="https://www.google.com/jsapi"></script>
+        <script>
+                window.onload = function() {
+                refreshPage();
+                setInterval(refreshPage, 50000);}
+        
+                function refreshPage()
+                {
+                	gaugeRequest = serverRequest();
+                	var URL = "http://prayzo-monitoring.appspot.com/envdata/RefreshGauges?Random=" + (new Date()).getTime();
+                	gaugeRequest.open("GET", URL, true);
+                    gaugeRequest.onreadystatechange = function() 
+                    {
+                		if (gaugeRequest.readyState == 4 && gaugeRequest.status == 200) 
+                		{
+                			JSONData = JSON.parse(gaugeRequest.responseText);
+                			for (var i = 0; i < JSONData.length; i++) 
+                 		    {
+                				var waterTempData = JSONData[i].waterTemp;
+                				var phData = JSONData[i].PH;
+                				var tdsData = JSONData[i].TDS;
+                 				var Time = JSONData[i].Time;
+                 			} 
+                			updateCharts(Time, waterTempData, phData, tdsData); 	
+                			updateGauges(waterTempData, phData, tdsData);
+                		}
+                	}
+                    gaugeRequest.send(null);
+                }
+                
+                function updatePlantOptions()
+                {
+                	var dbPlantOptions = document.getElementById("plantOptions");
+                	dbPlantOptions.add("test", null);
+                	plantOptionsRequest = serverRequest();
+                	var URL = "/envdata/getPlantOptions?";
+                	plantOptionsRequest.open("GET", URL, true);
+                	plantOptionsRequest.onreadystatechange = function() 
+                	{
+                		if (plantOptionsRequest.readyState == 4 && plantOptionsRequest.status == 200) 
+                		{
+                			JSONData = JSON.parse(plantOptionsRequest.responseText);
+                			for (var i = 0; i < JSONData.length; i++) 
+                			{
+                				dbPlantOptions.add(JSONData[i].Name, null);
+                				dbPlantOptions.add(i, null);
+                		    }
+                		}
+                	}
+                	plantOptionsRequest.send(null);
+                }
+                
+                function serverRequest()
+                {
+                	try { var newRequest = new XMLHttpRequest(); }
+                	catch (requestError){ 
+                		alert("Exception caught in Charts.serverRequest()");
+                		var newRequest=null;}	
+                	return(newRequest)
+                }
+		</script>	  	
+    <script> 
+            google.load('visualization', '1', {packages: ['gauge']});
+            var waterTempGauge;
+            var waterTempGaugeOptions;
+            var waterTempGaugeData;
+            var idealWaterTemp = 75;
+            var minWaterTemp = idealWaterTemp - 30;
+            var maxWaterTemp = idealWaterTemp + 30
+            var minWarningWaterTemp = idealWaterTemp - 10;
+            var minCriticalWaterTemp = idealWaterTemp - 20;
+            var maxWarningWaterTemp = idealWaterTemp + 10;
+            var maxCriticalWaterTemp = idealWaterTemp + 20;
+            
+            var phGauge;
+            var phGaugeOptions;
+            var phGaugeData;
+            var idealPH = 6;
+            var minPH = idealPH - 1.5;
+            var maxPH = idealPH + 1.5;
+            var minCriticalPH = idealPH - 1;
+            var minWarningPH = idealPH - 0.5;
+            var maxWarningPH = idealPH + 0.5;
+            var maxCriticalPH = idealPH + 1;
+            
+            var tdsGauge;
+            var tdsGaugeOptions;
+            var tdsGaugeData;
+            var idealTDS = 800;
+            var minTDS = idealTDS - 300;
+            var maxTDS = idealTDS + 300;
+            var minWarningTDS = idealTDS - 100;
+            var minCriticalTDS = idealTDS - 200;
+            var maxWarningTDS = idealTDS + 100;
+            var maxCriticalTDS = idealTDS + 200;
+            
+            google.setOnLoadCallback(drawGauges);
+            function drawGauges()
+            {
+            	waterTempGauge = new google.visualization.Gauge(document.getElementById('waterTempGauge'));
+                waterTempGaugeOptions = {          
+                		min: minWaterTemp,
+                		max: maxWaterTemp,          
+                		greenFrom: minWaterTemp, greenTo: maxWaterTemp, greenColor: "#FF0000",
+                		redFrom: minWarningWaterTemp, redTo: maxWarningWaterTemp, redColor: "#00FF00",
+                		yellowFrom: minCriticalWaterTemp, yellowTo: maxCriticalWaterTemp, yellowColor: "#FFFF00",
+                		majorTicks: [minWaterTemp, minCriticalWaterTemp, minWarningWaterTemp, idealWaterTemp, maxWarningWaterTemp, maxCriticalWaterTemp, maxWaterTemp],
+                		minorTicks: 5,
+                		animation:{duration: 2000, easing: 'linear'}};
+                waterTempGaugeData = google.visualization.arrayToDataTable([['H20 Temp'],[75]]);
+            	waterTempGauge.draw(waterTempGaugeData, waterTempGaugeOptions);
+            	
+            	phGauge = new google.visualization.Gauge(document.getElementById('phGauge'));
+            	phGaugeOptions = {          
+            			min: minPH,
+            			max: maxPH,          
+            			greenFrom: minPH, greenTo: maxPH, greenColor: "#FF0000",
+            			redFrom: minWarningPH, redTo: maxWarningPH, redColor: "#00FF00",
+            			yellowFrom: minCriticalPH, yellowTo: maxCriticalPH, yellowColor: "#FFFF00",	 	
+            			majorTicks: [minPH, minCriticalPH, minWarningPH, idealPH, maxWarningPH, maxCriticalPH, maxPH],
+            			minorTicks: 5,
+            			animation:{duration: 2000, easing: 'linear'}};
+                phGaugeData = google.visualization.arrayToDataTable([['PH'],[7]]);
+            	phGauge.draw(phGaugeData, phGaugeOptions);
+            	
+            	tdsGauge = new google.visualization.Gauge(document.getElementById('tdsGauge'));
+            	tdsGaugeOptions = {          
+            			min: minTDS,
+            			max: maxTDS,          
+            			greenFrom: minTDS, greenTo: maxTDS, greenColor: "#FF0000",
+            			redFrom: minWarningTDS, redTo: maxWarningTDS, redColor: "#00FF00",
+            			yellowFrom: minCriticalTDS, yellowTo: maxCriticalTDS, yellowColor: "#FFFF00",
+            			majorTicks: [minTDS, minCriticalTDS, minWarningTDS, idealTDS, maxWarningTDS, maxCriticalTDS, maxTDS],
+            			minorTicks: 5,
+            			animation:{duration: 2000, easing: 'linear'}};
+            	tdsGaugeData = google.visualization.arrayToDataTable([['TDS'],[250]]);
+            	tdsGauge.draw(tdsGaugeData, tdsGaugeOptions);
+            }
+            
+            function updateGauges(waterTempData, phData, tdsData)
+            {
+            	waterTempGaugeData.setValue(0, 0, waterTempData);
+            	waterTempGauge.draw(waterTempGaugeData, waterTempGaugeOptions);
+            
+            	phGaugeData.setValue(0, 0, phData);
+            	phGauge.draw(phGaugeData, phGaugeOptions);
+            	
+            	tdsGaugeData.setValue(0, 0, tdsData);
+            	tdsGauge.draw(tdsGaugeData, tdsGaugeOptions);
+            }
+            
+            function updateGaugeOptions()
+            {
+            	//alert('updateGaugeOptions.js - Entering');
+            	var URL = "/envdata/getGaugeOptions?plantType=Aquaponics";
+            	var updateGaugeOptions = serverRequest();
+            	updateGaugeOptions.open("GET", URL, true);
+            	//alert('updateGaugeOptions Request Sent');
+            	updateGaugeOptions.onreadystatechange = function()
+            	{
+            		//alert('Waiting for updateGaugeOptions readyState==4 and status==200');
+            		if (updateGaugeOptions.readyState == 4 && updateGaugeOptions.status == 200)
+            		{
+            			//alert('ReadyState == 4 and status == 200');
+            			JSONData = JSON.parse(updateGaugeOptions.responseText);
+            		 	
+            		 	idealWaterTemp = JSONData[0].idealWaterTemp;
+            			idealWaterTemp = 75;
+            		 	minWaterTemp = idealWaterTemp - 30;
+            		 	maxWaterTemp = idealWaterTemp + 30
+            		 	minWarningWaterTemp = idealWaterTemp - 10;
+            		 	minCriticalWaterTemp = idealWaterTemp - 20;
+            		 	maxWarningWaterTemp = idealWaterTemp + 10;
+            		 	maxCriticalWaterTemp = idealWaterTemp + 20;
+            					
+            			idealPH = JSONData[0].idealPH;
+            			minPH = idealPH - 1.5;
+            			maxPH = idealPH + 1.5;
+            			minCriticalPH = idealPH - 1;
+            			minWarningPH = idealPH - 0.5;
+            			maxWarningPH = idealPH + 0.5;
+            			maxCriticalPH = idealPH + 1;
+            				
+            			idealTDS = JSONData[0].idealTDS;
+            			minTDS = idealTDS - 600;
+            			maxTDS = idealTDS + 600;
+            			minWarningTDS = idealTDS - 200;
+            			minCriticalTDS = idealTDS - 400;
+            			maxWarningTDS = idealTDS + 200;
+            			maxCriticalTDS = idealTDS + 400;
+            			 	
+            		 	drawGauges();
+            		 	alert('Draw Gauges() Called');
+            		 	
+            			refreshPage();
+            			alert('refreshPage() Called');
+            		}
+            	}
+            	updateGaugeOptions.send(null);
+            }
+      </script>
+      <script> 
+            google.load('visualization', '1', {packages: ['corechart']});
+            var waterTempData = [['Time', 'waterTemp']];
+            var waterTempChart;
+            var waterTempChartData;
+            var waterTempChartOptions;
+            
+            var phData = [['Time', 'PH']];
+            var phChart;
+            var phChartData;
+            var phChartOptions;
+            
+            var tdsData = [['Time', 'TDS']];
+            var tdsChart;
+            var tdsChartData;
+            var tdsChartOptions;
+            
+            var URL = 'http://prayzo-monitoring.appspot.com/envdata/getEnvironmentData';
+            var requestEnvironmentData = serverRequest();
+            requestEnvironmentData.open("GET", URL, false);
+            
+            requestEnvironmentData.onload = function()
+            {
+            	if (requestEnvironmentData.status == 200)
+            		{
+            			//alert(requestEnvironmentData.responseText);
+            			environmentData = JSON.parse(requestEnvironmentData.responseText);
+            			
+            			if (environmentData != "")
+            			{
+            				for (var i = 0; i < environmentData.length; i++)
+            				{	
+            					var waterTemp = [[environmentData[i].Time, environmentData[i].waterTemp]];
+            					var ph = [[environmentData[i].Time, environmentData[i].PH]];
+            					var tds = [[environmentData[i].Time, environmentData[i].TDS]];
+            					
+            					waterTempData.push.apply(waterTempData, waterTemp);
+            					phData.push.apply(phData, ph);
+            					tdsData.push.apply(tdsData, tds);
+            				}
+            			}
+            			else	
+            			{
+            				waterTempData.push.apply(waterTempData, [['Waiting for data', 70]]);
+            				phData.push.apply(phData,[['Waiting for data', 7]]);
+            				tdsData.push.apply(tdsData,[['Waiting for data', 500]]);
+            			}
+            		}
+            	
+            };
+            requestEnvironmentData.send(null);
+            google.setOnLoadCallback(drawCharts);
+            
+            function drawCharts()
+            {
+                //Draw Water Temperature chart
+                waterTempChartData = google.visualization.arrayToDataTable(waterTempData);
+                waterTempChart = new google.visualization.LineChart(document.getElementById('waterTempChart'));
+                waterTempChartOptions = {
+                		title: 'Water Temperature',
+                		animation: {duration: 5000, easing: 'linear'},
+                		curveType: 'function',
+                		legend: {position: 'none'},
+                		vAxis: {minValue: 32, maxValue: 110}
+                		};
+                waterTempChart.draw(waterTempChartData, waterTempChartOptions);
+                
+                // Draw PH Chart
+                phChartData = google.visualization.arrayToDataTable(phData);
+                phChart = new google.visualization.LineChart(document.getElementById('phChart'));
+                phChartOptions = {
+                		title: 'PH',
+                		animation: {duration: 5000, easing: 'linear'},
+                		curveType: 'function',
+                		legend: {position: 'none'},
+                		vAxis: {maxValue: 10, minValue: 5}
+                		};
+                phChart.draw(phChartData, phChartOptions);
+                
+                //Draw TDS Chart
+                tdsChartData = google.visualization.arrayToDataTable(tdsData);
+                tdsChart = new google.visualization.LineChart(document.getElementById('tdsChart'));
+                tdsChartOptions = {
+                	title: 'Total Dissolved Solids',
+                	animation: {duration: 5000, easing: 'linear'},
+                	curveType: 'function',
+                	legend: {position: 'none'},
+                	vAxis: {minValue: 0}
+                };
+                tdsChart.draw(tdsChartData, tdsChartOptions);
+                
+            }
+            
+            function updateCharts(Time, waterTempData, phData, tdsData)
+            {
+            
+            	
+            	waterTempRecords = waterTempChartData.getNumberOfRows();
+            	waterTempLastUpdate = waterTempChartData.getValue(waterTempRecords-1,0);
+            	if (waterTempLastUpdate == 'Waiting for data'){
+            		waterTempChartData.remove(0);}
+            	if (Time != waterTempLastUpdate){
+            		waterTempChartData.addRow([Time, waterTempData]);
+            		waterTempChart.draw(waterTempChartData, waterTempChartOptions);}
+            	
+            	phRecords = phChartData.getNumberOfRows();
+            	phLastUpdate = phChartData.getValue(phRecords-1,0);
+            	if (phLastUpdate == 'Waiting for data'){
+            		phChartData.remove(0);}
+            	if (Time != phLastUpdate){
+            		phChartData.addRow([Time, phData]);
+            		phChart.draw(phChartData, phChartOptions);}
+            	
+            	tdsRecords = tdsChartData.getNumberOfRows();
+            	tdsLastUpdate = tdsChartData.getValue(tdsRecords-1,0);
+            	if (tdsLastUpdate == 'Waiting for data'){
+            		tdsChartData.remove(0);}
+            	if (Time != tdsLastUpdate){
+            		tdsChartData.addRow([Time, tdsData]);
+            		tdsChart.draw(tdsChartData, tdsChartOptions);}
+            }
+            
+            function serverRequest()
+            {
+            	try { var newRequest = new XMLHttpRequest(); }
+            	catch (requestError)
+            	{ 
+            		alert("Exception caught in Charts.serverRequest()");
+            		var newRequest=null;
+            	}	
+            	return(newRequest)
+            }
+</script>
+    	<link rel="stylesheet" href="main.css" />
+    	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+      <link rel="stylesheet" href="https://jax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css" />
+		  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+
+	    <table>
+	    	<tr>
+	    		<td> <div id="waterTempGauge" class="gauge"> </div> </td>
+	    		<td> <div id='waterTempChart' class='chart'> </div> </td>
+	    	</tr>
+	    	<tr>
+	    		<td> <div id="phGauge" class="gauge"> </div> </td>
+	    		<td> <div id='phChart' class='chart'> </div> </td>
+	    	</tr>
+	    	<tr>
+	    		<td> <div id="tdsGauge" class="gauge"> </div> </td>
+	    		<td> <div id='tdsChart' class='chart'> </div> </td>
+	    	</tr>
+	    </table>
+    </body>
+</body>
+</html>
