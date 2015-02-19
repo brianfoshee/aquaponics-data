@@ -4,4 +4,15 @@
 
 .gauge {
   margin: 20px 0 0 0;
+  width: 100%;
+  height: 300px;
+}
+
+.charts {
+  padding: 0 0 40px 0;
+}
+
+.chart {
+  width: 100%;
+  height: 400px;
 }
