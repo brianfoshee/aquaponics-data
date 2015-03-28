@@ -3,8 +3,9 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/models"
 	"log"
+
+	"github.com/brianfoshee/aquaponics-data/models"
 	// github.cocm/lib/pq provides drivers for postgres db
 	_ "github.com/lib/pq"
 )

@@ -3,8 +3,9 @@ package db
 import (
 	"encoding/json"
 	"errors"
-	"github.com/crakalakin/aquaponics-data/models"
 	"time"
+
+	"github.com/brianfoshee/aquaponics-data/models"
 )
 
 // MockManager holds a slice of Readings for tests which require mocked

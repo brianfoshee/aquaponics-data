@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/crakalakin/aquaponics-data/db"
-	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/db"
+	"github.com/brianfoshee/aquaponics-data/models"
 	"github.com/gorilla/mux"
 )
 
