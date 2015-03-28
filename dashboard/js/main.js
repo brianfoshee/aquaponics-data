@@ -7,11 +7,45 @@ function initVisualizations() {
   initTdsGauge();
   initWaterTempGauge();
   initChart();
+  initChartBtns();
   updateGauges();
 }
 
+function initChartBtns() {
+  var chartBtns = $('.chart-btn'),
+    chart = $('#all-chart'),
+    dataAttr = 'data-chart';
+  chartBtns.on('click', function(e){
+    var reading = $(this).attr(dataAttr);
+    $(chart).data('reading', reading);
+    updateChart(null);
+  });
+}
+
+function updateChart(d) {
+  var ele = $('#all-chart');
+  var readings = d;
+  if (readings === null) {
+    // 'readings' is an object from the server
+    readings = ele.data('readings');
+  } else {
+    ele.data('readings', readings);
+  }
+  var timestamps = Object.keys(readings);
+  timestamps.sort();
+  var data = ele.data('data');
+  var chart = ele.data('chart');
+  var options = ele.data('options');
+  // reading determines which reading to show, ie 'ph', 'water_temperature', 'tds'
+  var reading = ele.data('reading');
+  var arr = $.map(timestamps, function(v,i){
+    return [[v, readings[v][reading]]];
+  });
+  chart.draw(data(arr), options);
+}
+
 function updateGauges() {
-  var url = "http://gowebz.herokuapp.com/devices/MockClient4703/readings",
+  var url = "http://gowebz.herokuapp.com/devices/MockClient1/readings",
     phGauge = $('.ph-gauge'),
     tdsGauge = $('.tds-gauge'),
     wtempGauge = $('.wtemp-gauge'),
@@ -42,20 +76,6 @@ function drawGauge(ele, data) {
   var gauge = $(ele).data("gauge");
   var options = $(ele).data("options");
   gauge.draw(data, options);
-}
-
-function updateChart(readings) {
-  var ele = $('#all-chart');
-  $(ele).data('readings', readings);
-  var timestamps = Object.keys(readings);
-  timestamps.sort();
-  var data = $(ele).data('data');
-  var chart = $(ele).data('chart');
-  var options = $(ele).data('options');
-  var arr = $.map(timestamps, function(v,i){
-    return [[v, readings[v].ph]];
-  });
-  chart.draw(data(arr), options);
 }
 
 function initPhGauge() {
@@ -165,6 +185,7 @@ function initChart() {
   $(ele).data("chart", chart);
   $(ele).data("options", options);
   $(ele).data('data', data);
+  $(ele).data('reading', 'ph');
 
   chart.draw(data(readings), options);
 }
