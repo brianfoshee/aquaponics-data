@@ -1,9 +1,6 @@
 {
-	"ImportPath": "github.com/crakalakin/aquaponics-data",
-	"GoVersion": "go1.3.3",
-	"Packages": [
-		"./..."
-	],
+	"ImportPath": "github.com/brianfoshee/aquaponics-data",
+	"GoVersion": "go1.4.2",
 	"Deps": [
 		{
 			"ImportPath": "bitbucket.org/liamstask/goose/cmd/goose",
@@ -12,6 +9,11 @@
 		{
 			"ImportPath": "bitbucket.org/liamstask/goose/lib/goose",
 			"Rev": "a72c5a598e6d2460e918893e48e24e4d5f27c981"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-88-ga197e5d",
+			"Rev": "a197e5d40516f2e9f74dcee085a5f2d4604e94df"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
