@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/crakalakin/aquaponics-data/db"
-	"github.com/crakalakin/aquaponics-data/models"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/brianfoshee/aquaponics-data/db"
+	"github.com/brianfoshee/aquaponics-data/models"
 )
 
 func TestGetReadings(t *testing.T) {

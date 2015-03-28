@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/models"
 )
 
 func TestPostgresAddReading(t *testing.T) {

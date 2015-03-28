@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/models"
 )
 
 func TestNewMockManager(t *testing.T) {
