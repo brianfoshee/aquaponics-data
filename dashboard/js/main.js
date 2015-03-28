@@ -22,6 +22,10 @@ function initChartBtns() {
   });
 }
 
+function chartTimeFormat() {
+  return "M-D h:mm";
+}
+
 function updateChart(d) {
   var ele = $('#all-chart');
   var readings = d;
@@ -39,9 +43,9 @@ function updateChart(d) {
   // reading determines which reading to show, ie 'ph', 'water_temperature', 'tds'
   var reading = ele.data('reading');
   var arr = $.map(timestamps, function(v,i){
-    return [[v, readings[v][reading]]];
+    return [[moment(v).format(chartTimeFormat()), readings[v][reading]]];
   });
-  chart.draw(data(arr), options);
+  chart.draw(data(arr, reading), options(reading));
 }
 
 function updateGauges() {
@@ -69,7 +73,7 @@ function updateGauges() {
   req.fail(function(){
     console.log("failed");
   });
-  setTimeout(updateGauges, 5000);
+  //setTimeout(updateGauges, 5000);
 }
 
 function drawGauge(ele, data) {
@@ -102,7 +106,7 @@ function initPhGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(8.0), options);
+  gauge.draw(data(4), options);
 }
 
 function initTdsGauge() {
@@ -130,7 +134,7 @@ function initTdsGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(1000), options);
+  gauge.draw(data(0), options);
 }
 
 function initWaterTempGauge() {
@@ -157,28 +161,30 @@ function initWaterTempGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(72),options)
+  gauge.draw(data(50),options)
 }
 
 function initChart() {
-  var data = function(readings){
+  var data = function(readings, type){
     var d = new google.visualization.DataTable();
     d.addColumn('string', 'Timestamp');
-    d.addColumn('number', 'Ph');
+    d.addColumn('number', type);
     d.addRows(readings);
     return d;
   }
 
   var readings = [];
 
-  var options = {
-    hAxis: {
-      title: 'Time'
-    },
-    vAxis: {
-      title: 'Ph'
-    }
-  };
+  var options = function(title){
+    return {
+      hAxis: {
+        title: 'Time'
+      },
+      vAxis: {
+        title: title
+      }
+    };
+  }
   var ele = $('#all-chart');
   var chart = new google.visualization.LineChart(ele[0]);
 
@@ -187,5 +193,5 @@ function initChart() {
   $(ele).data('data', data);
   $(ele).data('reading', 'ph');
 
-  chart.draw(data(readings), options);
+  chart.draw(data(readings, 'Ph'), options('Ph'));
 }
