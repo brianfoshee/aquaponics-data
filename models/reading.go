@@ -38,5 +38,5 @@ type Reading struct {
 	Device     Device     `json:"device"`
 }
 
-// Readings represents a bunch of readings
+// Readings represents a slice of readings
 type Readings []*Reading

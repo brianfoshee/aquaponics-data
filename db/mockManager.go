@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/brianfoshee/aquaponics-data/models"
@@ -29,18 +30,16 @@ func (db *MockManager) GetReadings(d *models.Device) (json.RawMessage, error) {
 		return nil, errors.New("There are no readings")
 	}
 	r := db.readings
-	b := []byte{}
+	sd := map[string]interface{}{}
 
 	for _, reading := range r {
-		j, err := json.Marshal(reading.SensorData)
-		if err != nil {
-			return nil, errors.New("Could not unmarshal sensordata into json")
-		}
-		b = append(b, j...)
-		b = append(b, ',')
-
+		sd[reading.CreatedAt.Format(time.RFC3339)] = reading.SensorData
 	}
-	return json.RawMessage(b), nil
+	j, err := json.Marshal(sd)
+	if err != nil {
+		return nil, fmt.Errorf("Could not unmarshal sensordata into json. %q\n", err)
+	}
+	return j, nil
 }
 
 // GetCount returns the number of readings in MockManager
