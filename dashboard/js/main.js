@@ -49,7 +49,7 @@ function updateChart(d) {
 }
 
 function updateGauges() {
-  var url = "http://gowebz.herokuapp.com/devices/MockClient1/readings",
+  var url = "//gowebz.herokuapp.com/devices/MockClient1/readings",
     phGauge = $('.ph-gauge'),
     tdsGauge = $('.tds-gauge'),
     wtempGauge = $('.wtemp-gauge'),
