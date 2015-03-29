@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <link rel="stylesheet" href="/css/style.css">
+  </head>
+
+  <body>
+
+    <div class='container'>
+
+      <div class='row gauges'>
+
+        <div class='col-md-4'>
+          <div class='gauge' id='ph-gauge'></div>
+        </div> <!-- end .col-md-4 -->
+
+        <div class='col-md-4'>
+          <div class='gauge' id='tds-gauge'></div>
+        </div> <!-- end .col-md-4 -->
+
+        <div class='col-md-4'>
+          <div class='gauge' id='wtemp-gauge'></div>
+        </div> <!-- end .col-md-4 -->
+
+      </div> <!--end .row.gauges -->
+
+      <div class='row charts'>
+
+        <div class='col-md-12'>
+          <div class='panel panel-default'>
+            <div class='panel-heading'>
+              <div class="btn-group" role="group" aria-label="switch chart data">
+                <button type="button" class="btn btn-default chart-btn" data-chart='ph'>PH</button>
+                <button type="button" class="btn btn-default chart-btn" data-chart='tds'>TDS</button>
+                <button type="button" class="btn btn-default chart-btn" data-chart='water_temperature'>Water Temp</button>
+              </div>
+            </div> <!-- .panel-heading -->
+            <div class='panel-body'>
+              <div class='chart' id='all-chart'></div>
+            </div> <!-- .panel-body -->
+          </div> <!-- .panel-default -->
+        </div> <!-- end .col-md-12 -->
+
+      </div> <!-- end .row.charts -->
+
+    </div> <!-- end .container -->
+
+    <script src="/js/jquery-2.1.3.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/moment.min.js"></script>
+    <script src="https://www.google.com/jsapi"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
