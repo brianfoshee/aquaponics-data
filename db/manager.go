@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 
-	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/models"
 )
 
 // Manager an interface for abstracting out data storage

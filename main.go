@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/crakalakin/aquaponics-data/db"
-	"github.com/crakalakin/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/db"
+	"github.com/brianfoshee/aquaponics-data/models"
 	"github.com/gorilla/mux"
 )
 
@@ -17,6 +17,7 @@ func Router(mgr db.Manager) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(mgr)).Methods("GET")
 	r.HandleFunc("/devices/{id}/readings", addReadingHandler(mgr)).Methods("POST")
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dashboard/")))
 	return r
 }
 
