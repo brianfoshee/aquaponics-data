@@ -73,7 +73,7 @@ function updateGauges() {
   req.fail(function(){
     console.log("failed");
   });
-  //setTimeout(updateGauges, 5000);
+  setTimeout(updateGauges, 1000);
 }
 
 function drawGauge(ele, data) {

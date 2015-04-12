@@ -11,4 +11,5 @@ type Manager interface {
 	AddReading(r *models.Reading) error
 	GetReadings(d *models.Device) (json.RawMessage, error)
 	GetCount() (int, error)
+	Close() error
 }

@@ -47,6 +47,10 @@ func (db *MockManager) GetCount() (int, error) {
 	return len(db.readings), nil
 }
 
+func (db MockManager) Close() error {
+	return nil
+}
+
 // NewMockManager returns a shared instance of MockManager, and fills it with
 // dummy data to be used in tests
 func NewMockManager() *MockManager {

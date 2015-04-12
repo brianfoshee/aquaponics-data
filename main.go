@@ -9,28 +9,40 @@ import (
 
 	"github.com/brianfoshee/aquaponics-data/db"
 	"github.com/brianfoshee/aquaponics-data/models"
+	"github.com/brianfoshee/aquaponics-data/notify"
 	"github.com/gorilla/mux"
 )
 
 // Router abstracts http routes for the application
-func Router(mgr db.Manager) *mux.Router {
+func Router(c *Config) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(mgr)).Methods("GET")
-	r.HandleFunc("/devices/{id}/readings", addReadingHandler(mgr)).Methods("POST")
+	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(c)).Methods("GET")
+	r.HandleFunc("/devices/{id}/readings", addReadingHandler(c)).Methods("POST")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dashboard/")))
 	return r
 }
 
+type Config struct {
+	db db.Manager
+	nm *notify.Manager
+}
+
 func main() {
-	var mgr *db.PostgresManager
+	c := &Config{}
 	var err error
-	mgr, err = db.NewPostgresManager(os.Getenv("DATABASE_URL"))
+	c.db, err = db.NewPostgresManager(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Unable to create a new PostgresManager %s", err.Error())
 	}
-	defer mgr.Close()
+	defer c.db.Close()
 
-	r := Router(mgr)
+	c.nm = notify.NewManager()
+	c.nm.Register(&notify.EmailNotifier{})
+	c.nm.Register(&notify.MockNotifier{})
+	go c.nm.Run()
+	defer close(c.nm.Ch)
+
+	r := Router(c)
 	http.Handle("/", r)
 
 	err = http.ListenAndServe(":"+os.Getenv("PORT"), nil)
@@ -39,7 +51,7 @@ func main() {
 	}
 }
 
-func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Request) {
+func getReadingsHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		deviceID := vars["id"]
@@ -51,7 +63,7 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 			UpdatedAt:  now,
 		}
 
-		readings, err := mgr.GetReadings(&device)
+		readings, err := c.db.GetReadings(&device)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			log.Println(err)
@@ -72,7 +84,7 @@ func getReadingsHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Request) {
+func addReadingHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		deviceID := vars["id"]
@@ -83,18 +95,21 @@ func addReadingHandler(mgr db.Manager) func(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		reading := models.Reading{}
+		reading := &models.Reading{}
 		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&reading); err != nil {
+		if err := decoder.Decode(reading); err != nil {
 			panic(err)
 		}
 
 		reading.Device = models.Device{
 			Identifier: deviceID,
 		}
-		if err := mgr.AddReading(&reading); err != nil {
+		if err := c.db.AddReading(reading); err != nil {
 			panic(err)
 		}
+
+		// Push onto Notify Manager channel to check for validity
+		c.nm.Ch <- reading
 
 		data, err := json.Marshal(reading)
 		if err != nil {
