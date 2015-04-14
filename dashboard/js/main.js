@@ -182,7 +182,11 @@ function initChart() {
       },
       vAxis: {
         title: title
-      }
+      },
+      animation: {
+        duration: 2
+      },
+      curveType: "function"
     };
   }
   var ele = $('#all-chart');

@@ -38,7 +38,6 @@ func main() {
 
 	c.nm = notify.NewManager()
 	c.nm.Register(&notify.EmailNotifier{})
-	c.nm.Register(&notify.MockNotifier{})
 	go c.nm.Run()
 	defer close(c.nm.Ch)
 
