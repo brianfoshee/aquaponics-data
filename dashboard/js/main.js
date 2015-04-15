@@ -33,23 +33,34 @@ function chartTimeFormat() {
 function updateChart(d) {
   var ele = $('#all-chart');
   var readings = d;
+  var change = false;
   if (readings === null) {
     // 'readings' is an object from the server
     readings = ele.data('readings');
+    change = true;
   } else {
     ele.data('readings', readings);
   }
   var timestamps = Object.keys(readings);
   timestamps.sort();
+  var first = timestamps[0];
   var data = ele.data('data');
   var chart = ele.data('chart');
   var options = ele.data('options');
+  var storedData = ele.data('storedData');
   // reading determines which reading to show, ie 'ph', 'water_temperature', 'tds'
   var reading = ele.data('reading');
   var arr = $.map(timestamps, function(v,i){
     return [[moment(v).format(chartTimeFormat()), readings[v][reading]]];
   });
-  chart.draw(data(arr, reading), options(reading));
+  arr = [moment(first).format(chartTimeFormat()), readings[first][reading] ];
+  if (!change) {
+    storedData.addRow(arr);
+  } else {
+    storedData = data(arr, reading);
+    ele.data('storedData', storedData);
+  }
+  chart.draw(storedData, options(reading));
 }
 
 function readingsURL() {
@@ -179,6 +190,7 @@ function initWaterTempGauge() {
 
 function initChart() {
   var ele = $('#all-chart');
+  var chart = new google.visualization.LineChart(ele[0]);
   var data = function(readings, type){
     var d = new google.visualization.DataTable();
     d.addColumn('string', 'Timestamp');
@@ -186,9 +198,6 @@ function initChart() {
     d.addRows(readings);
     return d;
   }
-
-  var readings = [];
-
   var options = function(title){
     return {
       hAxis: {
@@ -197,18 +206,15 @@ function initChart() {
       vAxis: {
         title: title
       },
-      animation: {
-        duration: 2
-      },
       curveType: "function"
     };
   }
-  var chart = new google.visualization.LineChart(ele[0]);
 
-  $(ele).data("chart", chart);
-  $(ele).data("options", options);
-  $(ele).data('data', data);
-  $(ele).data('reading', 'ph');
+  ele.data("chart", chart);
+  ele.data("options", options);
+  ele.data('data', data);
+  ele.data('storedData', data([], 'Ph'))
+  ele.data('reading', 'ph');
 
-  chart.draw(data(readings, 'Ph'), options('Ph'));
+  chart.draw(ele.data('storedData'), options('Ph'));
 }
