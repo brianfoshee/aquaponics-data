@@ -39,6 +39,9 @@ function updateChart(d) {
   } else {
     ele.data('readings', readings);
   }
+  if (typeof(readings) === 'undefined') {
+    readings = {};
+  }
   var timestamps = Object.keys(readings);
   timestamps.sort();
   var data = ele.data('data');
