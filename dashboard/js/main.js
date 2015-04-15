@@ -70,6 +70,9 @@ function updateGauges() {
 
   var req = $.get(url);
   req.done(function(data){
+    if (JSON.stringify(data) === '{}') {
+      return false;
+    }
     var timestamps = Object.keys(data);
     timestamps.sort().reverse();
     var first = timestamps[0];
@@ -119,7 +122,7 @@ function initPhGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(4), options);
+  gauge.draw(data(0), options);
 }
 
 function initTdsGauge() {
@@ -174,7 +177,7 @@ function initWaterTempGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(50),options)
+  gauge.draw(data(0),options)
 }
 
 function initChart() {
