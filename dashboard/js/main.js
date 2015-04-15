@@ -2,6 +2,10 @@
 google.load("visualization", "1", {packages:["gauge", "corechart"]});
 google.setOnLoadCallback(initVisualizations);
 
+function getURLParameter(name) {
+  return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null
+}
+
 function initVisualizations() {
   initPhGauge();
   initTdsGauge();
@@ -48,8 +52,17 @@ function updateChart(d) {
   chart.draw(data(arr, reading), options(reading));
 }
 
+function readingsURL() {
+  var defaultDevice = "MockClient1",
+    paramDevice = getURLParameter("device");
+  if (paramDevice != null) {
+    defaultDevice = paramDevice;
+  }
+  return "//gowebz.herokuapp.com/devices/" + defaultDevice + "/readings";
+}
+
 function updateGauges() {
-  var url = "//gowebz.herokuapp.com/devices/MockClient1/readings",
+  var url = readingsURL(),
     phGauge = $('.ph-gauge'),
     tdsGauge = $('.tds-gauge'),
     wtempGauge = $('.wtemp-gauge'),
@@ -165,6 +178,7 @@ function initWaterTempGauge() {
 }
 
 function initChart() {
+  var ele = $('#all-chart');
   var data = function(readings, type){
     var d = new google.visualization.DataTable();
     d.addColumn('string', 'Timestamp');
@@ -189,7 +203,6 @@ function initChart() {
       curveType: "function"
     };
   }
-  var ele = $('#all-chart');
   var chart = new google.visualization.LineChart(ele[0]);
 
   $(ele).data("chart", chart);
