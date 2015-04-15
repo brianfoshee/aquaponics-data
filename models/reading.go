@@ -40,3 +40,15 @@ type Reading struct {
 
 // Readings represents a slice of readings
 type Readings []*Reading
+
+func (r Reading) ShouldAlert() bool {
+	if r.SensorData.TDS < 500 || r.SensorData.TDS > 1500 {
+		return true
+	}
+	/*
+		if r.SensorData.PH < 5 || r.SensorData.PH > 6 {
+			return true
+		}
+	*/
+	return false
+}

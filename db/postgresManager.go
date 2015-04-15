@@ -103,6 +103,6 @@ func (m *PostgresManager) GetCount() (int, error) {
 }
 
 // Close closes the database connection
-func (m *PostgresManager) Close() error {
+func (m PostgresManager) Close() error {
 	return m.db.Close()
 }
