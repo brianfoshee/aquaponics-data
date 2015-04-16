@@ -125,7 +125,7 @@ function initPhGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(0), options);
+  gauge.draw(data(5.5), options);
 }
 
 function initTdsGauge() {
@@ -153,7 +153,7 @@ function initTdsGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(0), options);
+  gauge.draw(data(1000), options);
 }
 
 function initWaterTempGauge() {
@@ -180,7 +180,7 @@ function initWaterTempGauge() {
   $(ele).data("options", options);
   $(ele).data("data", data);
 
-  gauge.draw(data(0),options)
+  gauge.draw(data(75),options)
 }
 
 function initChart() {
