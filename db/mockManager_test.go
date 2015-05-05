@@ -16,6 +16,25 @@ func TestNewMockManager(t *testing.T) {
 	}
 }
 
+func TestSignIn(t *testing.T) {
+	db := NewMockManager()
+
+	users := map[models.User]bool{
+		models.User{
+			Email:    "test@example.com",
+			Password: "password123"}: true,
+		models.User{
+			Email:    "john@test.com",
+			Password: "abc123"}: false,
+	}
+
+	for u, b := range users {
+		if user, _ := db.SignIn(u.Email, u.Password); user == nil && b {
+			t.Errorf("expected (%v) actual (%v)", b, user)
+		}
+	}
+}
+
 func TestMockAddReading(t *testing.T) {
 	db := NewMockManager()
 	l := len(db.readings)

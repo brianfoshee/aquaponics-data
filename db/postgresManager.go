@@ -33,6 +33,16 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 	return &PostgresManager{db}, nil
 }
 
+func (db *PostgresManager) AddUser(u *models.User) error {
+	// TODO: Implement
+	return nil
+}
+
+func (db *PostgresManager) SignIn(e, p string) (*models.User, error) {
+	// TODO: Implement
+	return nil, nil
+}
+
 // AddReading saves an instance of Reading to the database
 func (m *PostgresManager) AddReading(r *models.Reading) error {
 	b, err := json.Marshal(r.SensorData)

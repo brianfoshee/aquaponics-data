@@ -13,6 +13,31 @@ import (
 // data to be present.
 type MockManager struct {
 	readings models.Readings
+	users    []*models.User
+}
+
+func (db *MockManager) SignIn(e, p string) (user *models.User, err error) {
+	// find the email in the database
+	// if it exists, check the password in the database
+	// return true if both check out
+	for _, u := range db.users {
+		if u.Email == e {
+			user = u
+			break
+		}
+	}
+
+	if user == nil {
+		err = fmt.Errorf("could not find email %v in db", e)
+	}
+
+	return user, err
+}
+
+// AddUser add a single user into the database
+func (db *MockManager) AddUser(u *models.User) error {
+	db.users = append(db.users, u)
+	return nil
 }
 
 // AddReading adds a single reading to the slice of Readings in MockManager.
@@ -95,6 +120,12 @@ func NewMockManager() *MockManager {
 			CreatedAt:  t.Add(-28 * time.Hour),
 			SensorData: sensorData[2],
 			Device:     device,
+		},
+	}
+	db.users = []*models.User{
+		&models.User{
+			Email:    "test@example.com",
+			Password: "password123",
 		},
 	}
 	return &db
