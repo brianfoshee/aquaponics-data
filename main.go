@@ -18,6 +18,7 @@ func Router(c *Config) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(c)).Methods("GET")
 	r.HandleFunc("/devices/{id}/readings", addReadingHandler(c)).Methods("POST")
+	r.HandleFun("/signin", signinHandler(c)).Methods("POST")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dashboard/")))
 	return r
 }
