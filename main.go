@@ -18,7 +18,7 @@ func Router(c *Config) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/devices/{id}/readings", getReadingsHandler(c)).Methods("GET")
 	r.HandleFunc("/devices/{id}/readings", addReadingHandler(c)).Methods("POST")
-	r.HandleFun("/signin", signinHandler(c)).Methods("POST")
+	r.HandleFunc("/signin", signinHandler(c)).Methods("POST")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dashboard/")))
 	return r
 }
@@ -98,14 +98,18 @@ func addReadingHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 		reading := &models.Reading{}
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(reading); err != nil {
-			panic(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println(err)
+			return
 		}
 
 		reading.Device = models.Device{
 			Identifier: deviceID,
 		}
 		if err := c.db.AddReading(reading); err != nil {
-			panic(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println(err)
+			return
 		}
 
 		// Push onto Notify Manager channel to check for validity
@@ -113,11 +117,42 @@ func addReadingHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 
 		data, err := json.Marshal(reading)
 		if err != nil {
-			panic(err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println(err)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
+		w.Write(data)
+	}
+}
+func signinHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := &models.User{}
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(user); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			log.Println(err)
+			return
+		}
+
+		// TODO: Capture + Validate returned auth token
+		_, err := c.db.SignIn(user.Email, user.Password)
+		if err != nil {
+			http.Error(w, "Unathorized", http.StatusUnauthorized)
+			log.Println(err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		data, err := json.Marshal(user)
+		if err != nil {
+			http.Error(w, "Unathorized", http.StatusUnauthorized)
+			log.Println(err)
+			return
+		}
 		w.Write(data)
 	}
 }

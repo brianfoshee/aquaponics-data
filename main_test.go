@@ -114,33 +114,41 @@ func TestAddReading(t *testing.T) {
 		t.Errorf("Did not set message. Got(%v)", out)
 	}
 }
-TestSignIn(t *testing.T) {
+func TestValidSignIn(t *testing.T) {
 	c := &Config{}
 	c.db = db.NewMockManager()
 
-	u := models.User{
-		Email:  "Test-User",
-		Passowrd: "Test-Password",
-	}
-	b, err := json.Marshal(u)
-	if err != nil {
-		t.Error(err)
+	type testUser struct {
+		want	int
+		user	models.User
 	}
 
-	req, err := http.NewRequest("POST", "/signin", bytes.NewBuffer(b))
-	if err != nil {
-		t.Error(err)
+	testUsers := []testUser {
+		{http.StatusOK, models.User{Email: "test@example.com", Password: "password123",}},
+		{http.StatusUnauthorized, models.User{Email: "fail@example.com", Password: "password321",}},
 	}
 
-	w := httptest.NewRecorder()
+	for _, u := range testUsers {
+		b, err := json.Marshal(u.user)
+		if err != nil {
+			t.Error(err)
+		}
 
-	Router(c).ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Error("Bad Status Code: ", w.Code)
-	}
+		req, err := http.NewRequest("POST", "/signin", bytes.NewBuffer(b))
+		if err != nil {
+			t.Error(err)
+		}
 
-	_, err = json.Marshal(w.Body)
-	if err != nil {
-		t.Error("Response is not JSON: ", w.Body)
+		w := httptest.NewRecorder()
+
+		Router(c).ServeHTTP(w, req)
+		if w.Code != u.want {
+			t.Error("Bad Status Code: ", w.Code)
+		}
+
+		_, err = json.Marshal(w.Body)
+		if err != nil {
+			t.Error("Response is not JSON: ", w.Body)
+		}
 	}
 }
