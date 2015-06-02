@@ -10,6 +10,12 @@ $ go get bitbucket.org/liamstask/goose/cmd/goose
 $ DATABASE_URL="postgres://user@localhost/database?sslmode=disable" goose --env development up
 ```
 
+To create a Goose migration file, run:
+```bash
+$ goose create AddNewTable sql
+$ goose: created db/migrations/20150601093224_AddNewTable.sql
+```
+
 See [Goose][goose] docs for more info on rolling back migrations.
 
 To run migrations on Heroku, first push them up and then run:
