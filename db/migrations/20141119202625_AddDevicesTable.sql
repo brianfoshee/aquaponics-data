@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE EXTENSION "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE device (
   -- id is for internal use as a primary key
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
