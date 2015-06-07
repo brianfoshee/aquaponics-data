@@ -16,7 +16,7 @@ func TestNewMockManager(t *testing.T) {
 	}
 }
 
-func TestSignIn(t *testing.T) {
+func TestMockSignIn(t *testing.T) {
 	db := NewMockManager()
 
 	users := map[models.User]bool{

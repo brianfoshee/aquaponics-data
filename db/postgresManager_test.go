@@ -19,11 +19,11 @@ func TestPostgresAddReading(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to open database connection")
 	}
-	err = setupSchema(manager)
-	if err != nil {
-		t.Error("Failed to setup schema")
-		t.Error(err)
-	}
+	//err = setupSchema(manager)
+	//if err != nil {
+	//	t.Error("Failed to setup schema")
+	//	t.Error(err)
+	//}
 
 	device := models.Device{
 		Identifier: "ABC123",
@@ -90,9 +90,9 @@ func TestPostgresAddReading(t *testing.T) {
 			al)
 	}
 
-	if err := teardownSchema(manager); err != nil {
-		t.Fatal("Failed to teardown schema", err)
-	}
+	//if err := teardownSchema(manager); err != nil {
+	//	t.Fatal("Failed to teardown schema", err)
+	//}
 }
 
 func TestPostgresGetReadings(t *testing.T) {
@@ -105,11 +105,11 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Failed to open database connection")
 	}
 
-	err = setupSchema(manager)
-	if err != nil {
-		t.Error("Failed to setup schema")
-		t.Error(err)
-	}
+	//err = setupSchema(manager)
+	//if err != nil {
+	//	t.Error("Failed to setup schema")
+	//	t.Error(err)
+	//}
 
 	device := models.Device{
 		Identifier: "ABC123",
@@ -131,32 +131,145 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Unable to marshal readings received from database")
 	}
 
-	if err := teardownSchema(manager); err != nil {
-		t.Fatal("Failed to teardown schema")
+	//if err := teardownSchema(manager); err != nil {
+	//	t.Fatal("Failed to teardown schema")
+	//}
+}
+
+func TestPostgresAddUser(t *testing.T) {
+	uri := os.Getenv("DATABASE_URL")
+	manager, err := NewPostgresManager(uri)
+	defer manager.Close()
+	if err != nil {
+		t.Error("Failed to open database connection")
+	}
+
+	// err = setupSchema(manager)
+	//if err != nil {
+	//	t.Error("Failed to setup schema")
+	//	t.Error(err)
+	//}
+
+	user := models.User{
+		Email: "addUserTest@example.com",
+		Password:  "testing123",
+	}
+
+	var l int
+	err = manager.db.QueryRow(`
+	select count(email)
+	from users
+	where email = $1
+	`, user.Email).Scan(&l)
+
+	switch {
+	case err == sql.ErrNoRows:
+		t.Error("Error no rows in table reading")
+	case err != nil:
+		t.Error("Error", err)
+	}
+
+	if err := manager.AddUser(&user); err != nil {
+		t.Error("Postgres DB should add a reading\n", err)
+	}
+
+	var al int
+	err = manager.db.QueryRow(`
+	select count(email)
+	from users
+	where email = $1
+	`, user.Email).Scan(&al)
+
+	switch {
+	case err == sql.ErrNoRows:
+		t.Error("Error no rows in table reading")
+	case err != nil:
+		t.Error("Error", err)
+	}
+
+	if al != 1 && l != 0 {
+		t.Errorf(
+			`Postgres DB did not insert reading into readings.
+			Expected: %d
+			Actual: %d`,
+			1,
+			al)
+	}
+
+	//if err := teardownSchema(manager); err != nil {
+	//	t.Fatal("Failed to teardown schema", err)
+	//}
+}
+
+func TestSignIn(t *testing.T) {
+	uri := os.Getenv("DATABASE_URL")
+
+	manager, err := NewPostgresManager(uri)
+	defer manager.Close()
+	if err != nil {
+		t.Error("Failed to open database connection")
+	}
+
+	validUser := models.User{
+		Email: "testing@example.com",
+		Password: "testing123",
+	}
+
+	result, err := manager.SignIn(validUser.Email, validUser.Password)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if result.Email != validUser.Email {
+		t.Errorf(
+			`Postgres db rejected valid credentials.
+			Expected: %q
+			Actual: %q`,
+			result.Email, validUser.Email)
 	}
 }
 
 func setupSchema(m *PostgresManager) error {
 	_, err := m.db.Exec(`
-		CREATE EXTENSION "uuid-ossp"
+		CREATE EXTENSION IF NOT EXISTS "uuid-ossp"
 	`)
 	if err != nil {
 		return errors.New("Problem creating extension uuid-ossp")
 	}
+
 	_, err = m.db.Exec(`
-		CREATE TABLE device (
-			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-			identifier character varying NOT NULL,
-			updated_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-			created_at timestamp without time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')
-		)
+		CREATE EXTENSION IF NOT EXISTS citext
 	`)
 	if err != nil {
-		return errors.New("Problem creating table device")
+		return errors.New("Problem creating extension uuid-ossp")
 	}
 
 	_, err = m.db.Exec(`
-		CREATE TABLE reading (
+		create table if not exists users (
+			id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+			email citext UNIQUE NOT NULL,
+			password varchar(64) NOT NULL
+		)
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = m.db.Exec(`
+		create table if not exists device (
+			id uuid primary key default uuid_generate_v4(),
+			user_id uuid not null references users (id) on delete cascade,
+			identifier character varying not null,
+			updated_at timestamp without time zone not null default (now() at time zone 'utc'),
+			created_at timestamp without time zone not null default (now() at time zone 'utc')
+		)
+	`)
+	if err != nil {
+		return errors.New("problem creating table device")
+	}
+
+	_, err = m.db.Exec(`
+		CREATE TABLE IF NOT EXISTS reading (
 		  device_id uuid NOT NULL REFERENCES device (id) ON DELETE CASCADE,
 			readings jsonb NOT NULL DEFAULT '{}'::jsonb
 	  )
@@ -169,7 +282,14 @@ func setupSchema(m *PostgresManager) error {
 		CREATE INDEX reading_device_id ON reading (device_id)
 	`)
 	if err != nil {
-		return errors.New("Problem creating index on reading")
+		return err
+	}
+
+	_, err = m.db.Exec(`
+		CREATE INDEX user_email ON users (email);
+	`)
+	if err != nil {
+		return err
 	}
 
 	_, err = m.db.Exec(`

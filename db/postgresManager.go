@@ -33,13 +33,31 @@ func NewPostgresManager(uri string) (*PostgresManager, error) {
 	return &PostgresManager{db}, nil
 }
 
-func (db *PostgresManager) AddUser(u *models.User) error {
-	// TODO: Implement
+func (m *PostgresManager) AddUser(u *models.User) error {
+	_, err := m.db.Exec(`
+		INSERT INTO users (email, password)
+		VALUES ($1, $2)
+	`, u.Email, u.Password)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (db *PostgresManager) SignIn(e, p string) (*models.User, error) {
-	// TODO: Implement
+func (m *PostgresManager) SignIn(e, p string) (*models.User, error) {
+	result, err := m.db.Exec(`
+		Select count(*)
+		FROM users
+		WHERE Email=$1 and Password=$2
+	`, e, p)
+	if err != nil {
+		return nil, err
+	}
+	if result != nil {
+		return &models.User{Email: e, Password: p}, nil
+	}
+
 	return nil, nil
 }
 
