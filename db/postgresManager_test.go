@@ -151,8 +151,8 @@ func TestPostgresAddUser(t *testing.T) {
 	//}
 
 	user := models.User{
-		Email: "addUserTest@example.com",
-		Password:  "testing123",
+		Email:    "addUserTest@example.com",
+		Password: "testing123",
 	}
 
 	var l int
@@ -164,13 +164,13 @@ func TestPostgresAddUser(t *testing.T) {
 
 	switch {
 	case err == sql.ErrNoRows:
-		t.Error("Error no rows in table reading")
+		t.Error("Error no rows in table user")
 	case err != nil:
 		t.Error("Error", err)
 	}
 
 	if err := manager.AddUser(&user); err != nil {
-		t.Error("Postgres DB should add a reading\n", err)
+		t.Error("Postgres DB should add a user\n", err)
 	}
 
 	var al int
@@ -182,14 +182,14 @@ func TestPostgresAddUser(t *testing.T) {
 
 	switch {
 	case err == sql.ErrNoRows:
-		t.Error("Error no rows in table reading")
+		t.Error("Error no rows in table user")
 	case err != nil:
 		t.Error("Error", err)
 	}
 
 	if al != 1 && l != 0 {
 		t.Errorf(
-			`Postgres DB did not insert reading into readings.
+			`Postgres DB did not add user.
 			Expected: %d
 			Actual: %d`,
 			1,
@@ -211,7 +211,7 @@ func TestSignIn(t *testing.T) {
 	}
 
 	validUser := models.User{
-		Email: "testing@example.com",
+		Email:    "testing@example.com",
 		Password: "testing123",
 	}
 
