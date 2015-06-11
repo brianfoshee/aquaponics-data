@@ -100,7 +100,6 @@ func TestPostgresGetReadings(t *testing.T) {
 	now := time.Now().UTC()
 	uri := os.Getenv("DATABASE_URL")
 	manager, err := NewPostgresManager(uri)
-	defer manager.Close()
 
 	if err != nil {
 		t.Error("Failed to open database connection")
@@ -111,6 +110,12 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Failed to setup schema")
 		t.Error(err)
 	}
+	defer func() {
+		if err := teardownSchema(manager); err != nil {
+			t.Fatal("Failed to teardown schema", err)
+		}
+		manager.Close()
+	}()
 
 	device := models.Device{
 		Identifier: "ABC123",
@@ -131,16 +136,11 @@ func TestPostgresGetReadings(t *testing.T) {
 	if err != nil {
 		t.Error("Unable to marshal readings received from database")
 	}
-
-	if err := teardownSchema(manager); err != nil {
-		t.Fatal("Failed to teardown schema")
-	}
 }
 
 func TestPostgresAddUser(t *testing.T) {
 	uri := os.Getenv("DATABASE_URL")
 	manager, err := NewPostgresManager(uri)
-	defer manager.Close()
 	if err != nil {
 		t.Error("Failed to open database connection")
 	}
@@ -150,6 +150,12 @@ func TestPostgresAddUser(t *testing.T) {
 		t.Error("Failed to setup schema")
 		t.Error(err)
 	}
+	defer func() {
+		if err := teardownSchema(manager); err != nil {
+			t.Fatal("Failed to teardown schema", err)
+		}
+		manager.Close()
+	}()
 
 	user := models.User{
 		Email:    "addUserTest@example.com",
@@ -195,10 +201,6 @@ func TestPostgresAddUser(t *testing.T) {
 			Actual: %d`,
 			1,
 			al)
-	}
-
-	if err := teardownSchema(manager); err != nil {
-		t.Fatal("Failed to teardown schema", err)
 	}
 }
 
@@ -331,7 +333,13 @@ func setupSchema(m *PostgresManager) error {
 		return errors.New("Problem creating json upsert function")
 	}
 
-	_, err = m.db.Exec("insert into users (email, password) values ('testing@example.com', 'testing123')")
+	u := &models.User{Email: "testing@example.com"}
+	err = u.SetPassword("testing123")
+	if err != nil {
+		return err
+	}
+
+	_, err = m.db.Exec("insert into users (email, password) values ($1, $2)", u.Email, u.Password)
 	if err != nil {
 		return err
 	}

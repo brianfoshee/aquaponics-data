@@ -19,18 +19,29 @@ func TestNewMockManager(t *testing.T) {
 func TestMockSignIn(t *testing.T) {
 	db := NewMockManager()
 
-	users := map[models.User]bool{
-		models.User{
-			Email:    "test@example.com",
-			Password: "password123"}: true,
-		models.User{
-			Email:    "john@test.com",
-			Password: "abc123"}: false,
+	type testCase struct {
+		user     *models.User
+		expected bool
+		password string
 	}
 
-	for u, b := range users {
-		if user, _ := db.SignIn(u.Email, u.Password); user == nil && b {
-			t.Errorf("expected (%v) actual (%v)", b, user)
+	users := []testCase{
+		{
+			user:     &models.User{Email: "test@example.com"},
+			password: "password123",
+			expected: true,
+		},
+		{
+			user:     &models.User{Email: "john@test.com"},
+			password: "abc123",
+			expected: false,
+		},
+	}
+
+	for _, u := range users {
+		u.user.SetPassword(u.password)
+		if user, _ := db.SignIn(u.user.Email, u.password); user == nil && u.expected {
+			t.Errorf("expected (%v) actual (%v) user (%v)", u.expected, user)
 		}
 	}
 }

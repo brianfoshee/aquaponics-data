@@ -49,12 +49,9 @@ func TestAddReading(t *testing.T) {
 	defer close(c.nm.Ch)
 	go c.nm.Run()
 
-	// Hijack stdout to test alert
+	// Hijack stdout
 	old := os.Stdout // keep backup of the real stdout
 	rp, wp, err := os.Pipe()
-	if err != nil {
-		t.Error("Unable to open a pipe")
-	}
 	os.Stdout = wp
 	outC := make(chan string)
 
@@ -119,13 +116,13 @@ func TestValidSignIn(t *testing.T) {
 	c.db = db.NewMockManager()
 
 	type testUser struct {
-		want	int
-		user	models.User
+		want int
+		user models.User
 	}
 
-	testUsers := []testUser {
-		{http.StatusOK, models.User{Email: "test@example.com", Password: "password123",}},
-		{http.StatusUnauthorized, models.User{Email: "fail@example.com", Password: "password321",}},
+	testUsers := []testUser{
+		{http.StatusOK, models.User{Email: "test@example.com", Password: "password123"}},
+		{http.StatusUnauthorized, models.User{Email: "test@example.com", Password: "password321"}},
 	}
 
 	for _, u := range testUsers {
@@ -143,7 +140,7 @@ func TestValidSignIn(t *testing.T) {
 
 		Router(c).ServeHTTP(w, req)
 		if w.Code != u.want {
-			t.Error("Bad Status Code: ", w.Code)
+			t.Errorf("expected (%v) actual (%v) ", u.want, w.Code)
 		}
 
 		_, err = json.Marshal(w.Body)

@@ -22,8 +22,11 @@ func (db *MockManager) SignIn(e, p string) (user *models.User, err error) {
 	// return true if both check out
 	for _, u := range db.users {
 		if u.Email == e {
-			user = u
-			break
+			v := u.CheckPassword(p)
+			if v {
+				user = u
+				break
+			}
 		}
 	}
 
@@ -127,6 +130,9 @@ func NewMockManager() *MockManager {
 			Email:    "test@example.com",
 			Password: "password123",
 		},
+	}
+	for _, u := range db.users {
+		u.SetPassword(u.Password)
 	}
 	return &db
 }

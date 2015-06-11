@@ -129,24 +129,28 @@ func addReadingHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 }
 func signinHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := &models.User{}
+		type user struct {
+			email    string
+			password string
+		}
+		u := &user{}
 		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(user); err != nil {
+		if err := decoder.Decode(u); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			log.Println(err)
 			return
 		}
 
 		// TODO: Capture + Validate returned auth token
-		_, err := c.db.SignIn(user.Email, user.Password)
-		if err != nil {
+		su, err := c.db.SignIn(u.email, u.password)
+		if err != nil || su == nil {
 			http.Error(w, "Unathorized", http.StatusUnauthorized)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		data, err := json.Marshal(user)
+		data, err := json.Marshal(su)
 		if err != nil {
 			http.Error(w, "Unathorized", http.StatusUnauthorized)
 			log.Println(err)

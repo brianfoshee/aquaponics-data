@@ -46,16 +46,22 @@ func (m *PostgresManager) AddUser(u *models.User) error {
 }
 
 func (m *PostgresManager) SignIn(e, p string) (*models.User, error) {
-	result, err := m.db.Exec(`
-		Select count(*)
+	u := &models.User{}
+	err := m.db.QueryRow(`
+		Select email, password
 		FROM users
-		WHERE Email=$1 and Password=$2
-	`, e, p)
-	if err != nil {
+		WHERE email = $1
+	`, e).Scan(&u.Email, &u.Password)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, nil
+	case err != nil:
 		return nil, err
 	}
-	if result != nil {
-		return &models.User{Email: e, Password: p}, nil
+
+	if u.CheckPassword(p) {
+		return u, nil
 	}
 
 	return nil, nil
