@@ -15,15 +15,20 @@ func TestPostgresAddReading(t *testing.T) {
 	now := time.Now().UTC()
 	uri := os.Getenv("DATABASE_URL")
 	manager, err := NewPostgresManager(uri)
-	defer manager.Close()
 	if err != nil {
 		t.Error("Failed to open database connection")
 	}
-	//err = setupSchema(manager)
-	//if err != nil {
-	//	t.Error("Failed to setup schema")
-	//	t.Error(err)
-	//}
+	err = setupSchema(manager)
+	if err != nil {
+		t.Error("Failed to setup schema")
+		t.Error(err)
+	}
+	defer func() {
+		if err := teardownSchema(manager); err != nil {
+			t.Fatal("Failed to teardown schema", err)
+		}
+		manager.Close()
+	}()
 
 	device := models.Device{
 		Identifier: "ABC123",
@@ -89,10 +94,6 @@ func TestPostgresAddReading(t *testing.T) {
 			1,
 			al)
 	}
-
-	//if err := teardownSchema(manager); err != nil {
-	//	t.Fatal("Failed to teardown schema", err)
-	//}
 }
 
 func TestPostgresGetReadings(t *testing.T) {
@@ -105,11 +106,11 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Failed to open database connection")
 	}
 
-	//err = setupSchema(manager)
-	//if err != nil {
-	//	t.Error("Failed to setup schema")
-	//	t.Error(err)
-	//}
+	err = setupSchema(manager)
+	if err != nil {
+		t.Error("Failed to setup schema")
+		t.Error(err)
+	}
 
 	device := models.Device{
 		Identifier: "ABC123",
@@ -131,9 +132,9 @@ func TestPostgresGetReadings(t *testing.T) {
 		t.Error("Unable to marshal readings received from database")
 	}
 
-	//if err := teardownSchema(manager); err != nil {
-	//	t.Fatal("Failed to teardown schema")
-	//}
+	if err := teardownSchema(manager); err != nil {
+		t.Fatal("Failed to teardown schema")
+	}
 }
 
 func TestPostgresAddUser(t *testing.T) {
@@ -144,11 +145,11 @@ func TestPostgresAddUser(t *testing.T) {
 		t.Error("Failed to open database connection")
 	}
 
-	// err = setupSchema(manager)
-	//if err != nil {
-	//	t.Error("Failed to setup schema")
-	//	t.Error(err)
-	//}
+	err = setupSchema(manager)
+	if err != nil {
+		t.Error("Failed to setup schema")
+		t.Error(err)
+	}
 
 	user := models.User{
 		Email:    "addUserTest@example.com",
@@ -196,19 +197,29 @@ func TestPostgresAddUser(t *testing.T) {
 			al)
 	}
 
-	//if err := teardownSchema(manager); err != nil {
-	//	t.Fatal("Failed to teardown schema", err)
-	//}
+	if err := teardownSchema(manager); err != nil {
+		t.Fatal("Failed to teardown schema", err)
+	}
 }
 
 func TestSignIn(t *testing.T) {
 	uri := os.Getenv("DATABASE_URL")
 
 	manager, err := NewPostgresManager(uri)
-	defer manager.Close()
 	if err != nil {
 		t.Error("Failed to open database connection")
 	}
+	err = setupSchema(manager)
+	if err != nil {
+		t.Error("Failed to setup schema")
+		t.Error(err)
+	}
+	defer func() {
+		if err := teardownSchema(manager); err != nil {
+			t.Fatal("Failed to teardown schema", err)
+		}
+		manager.Close()
+	}()
 
 	validUser := models.User{
 		Email:    "testing@example.com",
@@ -227,6 +238,7 @@ func TestSignIn(t *testing.T) {
 			Actual: %q`,
 			result.Email, validUser.Email)
 	}
+
 }
 
 func setupSchema(m *PostgresManager) error {
@@ -241,7 +253,7 @@ func setupSchema(m *PostgresManager) error {
 		CREATE EXTENSION IF NOT EXISTS citext
 	`)
 	if err != nil {
-		return errors.New("Problem creating extension uuid-ossp")
+		return errors.New("Problem creating extension citext")
 	}
 
 	_, err = m.db.Exec(`
@@ -319,7 +331,21 @@ func setupSchema(m *PostgresManager) error {
 		return errors.New("Problem creating json upsert function")
 	}
 
-	_, err = m.db.Exec("insert into device (identifier) values ('ABC123')")
+	_, err = m.db.Exec("insert into users (email, password) values ('testing@example.com', 'testing123')")
+	if err != nil {
+		return err
+	}
+
+	var userID string
+	err = m.db.QueryRow("SELECT id from users").Scan(&userID)
+	switch {
+	case err == sql.ErrNoRows:
+		return errors.New("No rows in 'users' table")
+	case err != nil:
+		return err
+	}
+
+	_, err = m.db.Exec("insert into device (identifier, user_id) values ('ABC123', $1)", userID)
 	if err != nil {
 		return err
 	}
@@ -376,7 +402,15 @@ func teardownSchema(m *PostgresManager) error {
 	if err != nil {
 		return err
 	}
+	_, err = m.db.Exec("DROP TABLE users")
+	if err != nil {
+		return err
+	}
 	_, err = m.db.Exec(`DROP EXTENSION "uuid-ossp"`)
+	if err != nil {
+		return err
+	}
+	_, err = m.db.Exec(`DROP EXTENSION "citext"`)
 	if err != nil {
 		return err
 	}

@@ -141,7 +141,6 @@ func signinHandler(c *Config) func(w http.ResponseWriter, r *http.Request) {
 		_, err := c.db.SignIn(user.Email, user.Password)
 		if err != nil {
 			http.Error(w, "Unathorized", http.StatusUnauthorized)
-			log.Println(err)
 			return
 		}
 
