@@ -115,14 +115,18 @@ func TestValidSignIn(t *testing.T) {
 	c := &Config{}
 	c.db = db.NewMockManager()
 
+	type fakeUser struct {
+		Email, Password string
+	}
+
 	type testUser struct {
 		want int
-		user models.User
+		user fakeUser
 	}
 
 	testUsers := []testUser{
-		{http.StatusOK, models.User{Email: "test@example.com", Password: "password123"}},
-		{http.StatusUnauthorized, models.User{Email: "test@example.com", Password: "password321"}},
+		{http.StatusOK, fakeUser{Email: "test@example.com", Password: "password123"}},
+		{http.StatusUnauthorized, fakeUser{Email: "test@example.com", Password: "password321"}},
 	}
 
 	for _, u := range testUsers {
@@ -130,14 +134,14 @@ func TestValidSignIn(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-
-		req, err := http.NewRequest("POST", "/signin", bytes.NewBuffer(b))
+		buf := bytes.NewBuffer(b)
+		req, err := http.NewRequest("POST", "/signin", buf)
+		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Error(err)
 		}
 
 		w := httptest.NewRecorder()
-
 		Router(c).ServeHTTP(w, req)
 		if w.Code != u.want {
 			t.Errorf("expected (%v) actual (%v) ", u.want, w.Code)

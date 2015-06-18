@@ -17,15 +17,11 @@ type MockManager struct {
 }
 
 func (db *MockManager) SignIn(e, p string) (user *models.User, err error) {
-	// find the email in the database
-	// if it exists, check the password in the database
-	// return true if both check out
 	for _, u := range db.users {
 		if u.Email == e {
 			v := u.CheckPassword(p)
 			if v {
-				user = u
-				break
+				return u, nil
 			}
 		}
 	}
