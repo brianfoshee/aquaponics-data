@@ -4,9 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
-	_ "github.com/ziutek/mymysql/godrv"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,6 +12,11 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/ziutek/mymysql/godrv"
 )
 
 var (
@@ -54,6 +56,11 @@ func RunMigrations(conf *DBConf, migrationsDir string, target int64) (err error)
 	}
 	defer db.Close()
 
+	return RunMigrationsOnDb(conf, migrationsDir, target, db)
+}
+
+// Runs migration on a specific database instance.
+func RunMigrationsOnDb(conf *DBConf, migrationsDir string, target int64, db *sql.DB) (err error) {
 	current, err := EnsureDBVersion(conf, db)
 	if err != nil {
 		return err

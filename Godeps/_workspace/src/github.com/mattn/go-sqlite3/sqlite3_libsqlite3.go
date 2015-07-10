@@ -2,12 +2,12 @@
 //
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
-// +build !windows
+// +build libsqlite3
 
 package sqlite3
 
 /*
-#cgo CFLAGS: -I.
-#cgo linux LDFLAGS: -ldl
+#cgo CFLAGS: -DUSE_LIBSQLITE3
+#cgo LDFLAGS: -lsqlite3
 */
 import "C"
